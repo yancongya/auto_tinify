@@ -4,6 +4,9 @@
     <meta name="format-detection" content="telephone=no">
     <title>快点鸭Auto_Tinify - After Effects 智能图片压缩工具</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -208,6 +211,24 @@
         /* Magnetic button effect */
         .magnetic-button {
             transition: transform 0.3s ease;
+        }
+
+        /* Logo Canvas animation */
+        #nav-logo-canvas {
+            transition: transform 0.3s ease;
+        }
+        #nav-logo-container:hover #nav-logo-canvas,
+        #nav-logo-container.hover-middle #nav-logo-canvas {
+            transform: scale(1.15);
+        }
+        #nav-logo-container.hover-end #nav-logo-canvas {
+            transform: scale(1.2);
+        }
+        #footer-logo-canvas {
+            transition: transform 0.3s ease;
+        }
+        #footer-logo-container:hover #footer-logo-canvas {
+            transform: scale(1.15);
         }
 
         /* Image reveal effect */
@@ -520,10 +541,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 md:h-20">
                 <!-- Logo -->
-                <a href="./" class="flex items-center space-x-3">
-                    <div class="relative">
-                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-accent-500 rounded-lg blur opacity-70"></div>
-                        <img src="assets/logo2.png" alt="快点鸭Auto_Tinify" class="relative w-8 h-8 md:w-10 md:h-10 rounded-lg">
+                <a href="./" class="flex items-center space-x-3" id="nav-logo-link">
+                    <div class="relative" id="nav-logo-container">
+                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-accent-500 rounded-lg blur opacity-70 logo-glow"></div>
+                        <canvas id="nav-logo-canvas" width="128" height="128" class="relative w-8 h-8 md:w-10 md:h-10 rounded-lg logo-animate"></canvas>
                     </div>
                     <span class="text-xl md:text-2xl font-bold text-gradient">快点鸭Auto_Tinify</span>
                 </a>
@@ -1121,9 +1142,9 @@
             <div class="flex flex-col md:flex-row justify-between items-center mb-8">
                 <!-- Logo -->
                 <div class="flex items-center mb-6 md:mb-0">
-                    <div class="relative mr-3">
-                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-accent-500 rounded-lg blur opacity-70"></div>
-                        <img src="assets/logo.png" alt="快点鸭Auto_Tinify" class="relative w-8 h-8 rounded-lg">
+                    <div class="relative mr-3" id="footer-logo-container">
+                        <div class="absolute inset-0 bg-gradient-to-r from-brand-500 to-accent-500 rounded-lg blur opacity-70 footer-logo-glow"></div>
+                        <canvas id="footer-logo-canvas" width="128" height="128" class="relative w-8 h-8 rounded-lg footer-logo-canvas"></canvas>
                     </div>
                     <span class="text-xl font-bold text-gradient">快点鸭Auto_Tinify</span>
                 </div>
@@ -1425,7 +1446,172 @@
             
             // Initialize first image as active
             updateMainImage(0);
-        });
+            
+            });
+            
+            // Logo WebP Animation Control using Canvas
+            const logoCanvas = document.getElementById('nav-logo-canvas');
+            const logoContainer = document.getElementById('nav-logo-container');
+            const logoLink = document.getElementById('nav-logo-link');
+            
+            if (logoCanvas) {
+                const ctx = logoCanvas.getContext('2d');
+                const frames = [];
+                const totalFrames = 18; // 18 frames in logo_animated folder
+                let currentFrame = 0;
+                let isHovering = false;
+                let hasClicked = false;
+                let animationId = null;
+                
+                // Load all frames
+                let loadedFrames = 0;
+                for (let i = 0; i < totalFrames; i++) {
+                    const img = new Image();
+                    const frameNum = String(i).padStart(3, '0');
+                    img.src = `assets/logo_animated/${frameNum}.png`;
+                    img.onload = () => {
+                        loadedFrames++;
+                        if (loadedFrames === totalFrames) {
+                            // All frames loaded, start animation
+                            startAnimation();
+                        }
+                    };
+                    frames.push(img);
+                }
+                
+                function drawFrame(frameIndex) {
+                    ctx.clearRect(0, 0, logoCanvas.width, logoCanvas.height);
+                    const frame = frames[frameIndex];
+                    if (frame && frame.complete) {
+                        ctx.drawImage(frame, 0, 0, logoCanvas.width, logoCanvas.height);
+                    }
+                }
+                
+                function startAnimation() {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    
+                    function animate() {
+                        if (isHovering || hasClicked) {
+                            // 播放到中间或结束
+                            const targetFrame = hasClicked ? totalFrames - 1 : Math.floor(totalFrames / 2);
+                            if (currentFrame < targetFrame) {
+                                currentFrame += 0.5; // 控制播放速度
+                                if (currentFrame > targetFrame) currentFrame = targetFrame;
+                            }
+                        } else {
+                            // 悬浮结束后，动画反向或停止
+                            if (currentFrame > 0) {
+                                currentFrame -= 0.5;
+                                if (currentFrame < 0) currentFrame = 0;
+                            } else {
+                                // 正常循环播放（可选）
+                                // currentFrame = (currentFrame + 1) % totalFrames;
+                            }
+                        }
+                        
+                        drawFrame(Math.floor(currentFrame));
+                        animationId = requestAnimationFrame(animate);
+                    }
+                    animate();
+                }
+                
+                // Mouse events
+                if (logoContainer) {
+                    logoContainer.addEventListener('mouseenter', function() {
+                        isHovering = true;
+                        if (!hasClicked) {
+                            logoContainer.classList.add('hover-middle');
+                            logoContainer.classList.remove('hover-end');
+                        }
+                    });
+                    
+                    logoContainer.addEventListener('mouseleave', function() {
+                        isHovering = false;
+                        if (!hasClicked) {
+                            logoContainer.classList.remove('hover-middle');
+                        }
+                    });
+                    
+                    if (logoLink) {
+                        logoLink.addEventListener('click', function() {
+                            if (!hasClicked) {
+                                hasClicked = true;
+                                logoContainer.classList.remove('hover-middle');
+                                logoContainer.classList.add('hover-end');
+                            }
+                        });
+                    }
+                }
+            }
+            
+            // Footer Logo Animation (same as nav logo)
+            const footerLogoCanvas = document.getElementById('footer-logo-canvas');
+            const footerLogoContainer = document.getElementById('footer-logo-container');
+            
+            if (footerLogoCanvas) {
+                const ctx = footerLogoCanvas.getContext('2d');
+                const footerFrames = [];
+                const footerTotalFrames = 18;
+                let footerCurrentFrame = 0;
+                let footerIsHovering = false;
+                let footerHasClicked = false;
+                let footerAnimationId = null;
+                
+                let footerLoadedFrames = 0;
+                for (let i = 0; i < footerTotalFrames; i++) {
+                    const img = new Image();
+                    const frameNum = String(i).padStart(3, '0');
+                    img.src = `assets/logo_animated/${frameNum}.png`;
+                    img.onload = () => {
+                        footerLoadedFrames++;
+                        if (footerLoadedFrames === footerTotalFrames) {
+                            footerStartAnimation();
+                        }
+                    };
+                    footerFrames.push(img);
+                }
+                
+                function drawFooterFrame(frameIndex) {
+                    ctx.clearRect(0, 0, footerLogoCanvas.width, footerLogoCanvas.height);
+                    const frame = footerFrames[frameIndex];
+                    if (frame && frame.complete) {
+                        ctx.drawImage(frame, 0, 0, footerLogoCanvas.width, footerLogoCanvas.height);
+                    }
+                }
+                
+                function footerStartAnimation() {
+                    if (footerAnimationId) cancelAnimationFrame(footerAnimationId);
+                    
+                    function animate() {
+                        if (footerIsHovering || footerHasClicked) {
+                            const targetFrame = footerHasClicked ? footerTotalFrames - 1 : Math.floor(footerTotalFrames / 2);
+                            if (footerCurrentFrame < targetFrame) {
+                                footerCurrentFrame += 0.5;
+                                if (footerCurrentFrame > targetFrame) footerCurrentFrame = targetFrame;
+                            }
+                        } else {
+                            if (footerCurrentFrame > 0) {
+                                footerCurrentFrame -= 0.5;
+                                if (footerCurrentFrame < 0) footerCurrentFrame = 0;
+                            }
+                        }
+                        
+                        drawFooterFrame(Math.floor(footerCurrentFrame));
+                        footerAnimationId = requestAnimationFrame(animate);
+                    }
+                    animate();
+                }
+                
+                if (footerLogoContainer) {
+                    footerLogoContainer.addEventListener('mouseenter', function() {
+                        footerIsHovering = true;
+                    });
+                    
+                    footerLogoContainer.addEventListener('mouseleave', function() {
+                        footerIsHovering = false;
+                    });
+                }
+            }
     </script>
 
 </body></html>
