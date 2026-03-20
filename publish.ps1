@@ -45,11 +45,13 @@ Write-Host "Step 3: Switching to main branch (public)..." -ForegroundColor Yello
 git checkout main
 
 # 6. Sync folders
-Write-Host "Step 4: Syncing public, assets folders and docs..." -ForegroundColor Yellow
+Write-Host "Step 4: Syncing public, assets folders, HTML files and docs..." -ForegroundColor Yellow
 git checkout dev -- public/
 git checkout dev -- assets/
+git checkout dev -- index.html
 git add public/
 git add assets/
+git add index.html
 git add "更新日志.md"
 git add README.md
 
