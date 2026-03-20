@@ -1,0 +1,1205 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="format-detection" content="telephone=no">
+    <title>Auto_Tinify - After Effects 图片压缩工具</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- AOS Animation Library -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        neutral: '#6B7280',
+                        'neutral-light': '#F9FAFB'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-balance {
+                text-wrap: balance;
+            }
+            .glass-effect {
+                backdrop-filter: blur(10px);
+                background-color: rgba(255, 255, 255, 0.7);
+            }
+            .card-transition {
+                transition: all 0.3s ease;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
+            }
+            .btn-secondary {
+                @apply bg-white text-primary border border-primary px-6 py-3 rounded-lg font-medium hover:bg-primary/5 transition-all duration-300;
+            }
+            .badge {
+                @apply px-3 py-1 text-xs font-medium rounded-full;
+            }
+            .badge-blue {
+                @apply bg-primary/10 text-primary;
+            }
+            .badge-green {
+                @apply bg-success/10 text-success;
+            }
+            .badge-orange {
+                @apply bg-warning/10 text-warning;
+            }
+            .badge-gray {
+                @apply bg-neutral/10 text-neutral;
+            }
+
+            .toggle-checkbox:checked {
+                @apply right-0 border-green-400;
+            }
+            .toggle-checkbox:checked + .toggle-label {
+                @apply bg-primary;
+            }
+        }
+
+        /* 自定义容器宽度 */
+        .container {
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (min-width: 640px) {
+            .container { max-width: 640px; }
+        }
+        @media (min-width: 768px) {
+            .container { max-width: 768px; }
+        }
+        @media (min-width: 1024px) {
+            .container { max-width: 1024px; }
+        }
+        @media (min-width: 1280px) {
+            .container { max-width: 1280px; }
+        }
+        @media (min-width: 1536px) {
+            .container { max-width: 1536px; }
+        }
+
+        /* 滚动吸附优化 */
+        html {
+            scroll-behavior: smooth;
+            scroll-snap-type: y proximity;
+            scroll-padding-top: 80px;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        @media (max-width: 768px) {
+            html {
+                scroll-padding-top: 60px;
+                scroll-snap-type: none; /* 在小屏幕上禁用滚动吸附 */
+            }
+        }
+
+        section {
+            scroll-snap-align: start;
+        }
+
+        /* 全局图片响应式 */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* 移动端优化样式 */
+        @media (max-width: 768px) {
+            body {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+                overflow-x: hidden; /* 防止水平滚动 */
+            }
+            
+            /* 防止双击缩放 */
+            * {
+                touch-action: manipulation;
+            }
+            
+            /* 调整移动端字体大小 */
+            html {
+                font-size: 14px;
+            }
+            
+            /* 调整移动端容器间距 */
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            /* 修复移动端导航 */
+            nav {
+                padding: 0.5rem 0;
+            }
+            
+            /* 调整移动端按钮大小 */
+            .btn-primary, .btn-secondary {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.875rem;
+            }
+            
+            /* 调整移动端卡片间距 */
+            section {
+                padding-top: 3rem;
+                padding-bottom: 3rem;
+            }
+            
+            /* 修复移动端表格 */
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            /* 修复移动端网格 */
+            .grid {
+                gap: 1rem;
+            }
+            
+            /* 修复移动端文字对齐 */
+            .text-center {
+                text-align: center;
+            }
+            
+            /* 修复移动端图片对齐 */
+            .flex.justify-center img {
+                margin: 0 auto;
+            }
+            
+            /* 导航栏特定修复 */
+            nav .container {
+                padding: 0;
+            }
+            
+            /* 移动端菜单网格修复 */
+            #mobile-menu .grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                padding: 0.5rem 0;
+            }
+            
+            /* 移动端菜单项对齐 */
+            #mobile-menu a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.625rem 0.5rem;
+                font-size: 0.875rem;
+                border-radius: 0.5rem;
+            }
+            
+            /* 平板菜单修复 */
+            .hidden.md\\:flex.lg\\:hidden {
+                max-width: 100%;
+                overflow-x: auto;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            
+            .hidden.md\\:flex.lg\\:hidden::-webkit-scrollbar {
+                display: none;
+            }
+            
+            /* Logo和文字对齐修复 */
+            nav .flex.items-center img {
+                flex-shrink: 0;
+            }
+            
+            nav .flex.items-center span {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            /* 导航栏链接对齐 */
+            nav a {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            /* Hero区域移动端优化 */
+            section.py-12.sm\\:py-16.md\\:py-20.lg\\:py-32 {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+            
+            /* Hero区域logo调整 */
+            .w-32.h-32.sm\\:w-40.sm\\:h-40.md\\:w-48.md\\:h-48 {
+                width: 6rem;
+                height: 6rem;
+            }
+            
+            /* Hero区域标题调整 */
+            .text-2xl.sm\\:text-3xl.md\\:text-5xl {
+                font-size: 1.5rem;
+                line-height: 2rem;
+            }
+            
+            /* Hero区域副标题调整 */
+            .text-xl.sm\\:text-2xl.md\\:text-3xl {
+                font-size: 1.25rem;
+                line-height: 1.75rem;
+            }
+            
+            /* Hero区域描述文字调整 */
+            .text-base.sm\\:text-lg.md\\:text-xl {
+                font-size: 0.875rem;
+                line-height: 1.25rem;
+            }
+            
+            /* 徽章间距调整 */
+            .flex.flex-wrap.justify-center.gap-2.sm\\:gap-3.md\\:gap-4 {
+                gap: 0.5rem;
+            }
+            
+            /* 按钮宽度调整 */
+            .flex.flex-col.sm\\:flex-row.gap-3.sm\\:gap-4.w-full.sm\\:w-auto {
+                width: 100%;
+            }
+            
+            .btn-primary.text-center.w-full.sm\\:w-auto,
+            .btn-secondary.text-center.w-full.sm\\:w-auto {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            /* 内容区域图片调整 */
+            .bg-white.rounded-lg.overflow-hidden.shadow-lg img {
+                max-height: 200px;
+                object-fit: cover;
+            }
+            
+            /* 功能卡片调整 */
+            .bg-white.rounded-xl.p-6.shadow-card {
+                padding: 1rem;
+            }
+            
+            /* 功能卡片图标调整 */
+            .w-12.h-12.bg-blue-100.rounded-lg {
+                width: 2.5rem;
+                height: 2.5rem;
+            }
+            
+            /* 网格布局调整 */
+            .grid.grid-cols-1.md\\:grid-cols-2 {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            /* 截图网格调整 */
+            .grid.grid-cols-3 {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+            
+            /* 时间线调整 */
+            .hidden.md\\:block.absolute.left-1\/2 {
+                display: none;
+            }
+            
+            /* 时间线步骤调整 */
+            .flex.flex-col.md\\:flex-row.items-center {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            /* 步骤圆圈调整 */
+            .md\\:w-12.md\\:h-12.bg-primary.rounded-full {
+                width: 2rem;
+                height: 2rem;
+                font-size: 1rem;
+            }
+            
+            /* 步骤内容调整 */
+            .md\\:w-1\/2.md\\:pr-12.md\\:text-right {
+                text-align: left;
+                padding: 0;
+            }
+            
+            .md\\:w-1\/2.md\\:pl-12 {
+                padding: 0;
+            }
+            
+            /* 支付二维码调整 */
+            .w-48.h-48 {
+                width: 10rem;
+                height: 10rem;
+            }
+            
+            /* 页脚调整 */
+            footer .flex.flex-col.md\\:flex-row.justify-between {
+                flex-direction: column;
+                align-items: center;
+                gap: 2rem;
+            }
+            
+            /* FAQ手风琴调整 */
+            .bg-white.dark\\:bg-dark-100.rounded-xl.shadow-card.dark\\:shadow-dark-card {
+                border-radius: 0.5rem;
+            }
+            
+            .faq-toggle {
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        /* 超小屏幕优化 */
+        @media (max-width: 480px) {
+            html {
+                font-size: 13px;
+            }
+            
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            section {
+                padding-top: 2rem;
+                padding-bottom: 2rem;
+            }
+            
+            .btn-primary, .btn-secondary {
+                padding: 0.625rem 1.25rem;
+                font-size: 0.8125rem;
+            }
+        }
+
+        /* 大屏幕优化 */
+        @media (min-width: 1024px) {
+            html {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 bg-white">
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm">
+        <div class="container mx-auto px-3 sm:px-4 lg:px-8">
+            <div class="flex items-center justify-between h-14 md:h-16">
+                <div class="flex items-center">
+                    <img src="assets/logo2.png" alt="Auto_Tinify Logo" class="w-7 h-7 md:w-8 md:h-8 mr-2">
+                    <span class="font-bold text-gray-900 text-sm md:text-base">快点鸭</span>
+                </div>
+                <div class="hidden lg:flex items-center space-x-1">
+                    <a href="#interface" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">软件界面</a>
+                    <a href="#features" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">核心功能</a>
+                    <a href="#quickstart" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">快速开始</a>
+                    <a href="#shortcuts" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">快捷操作</a>
+                    <a href="#path" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">路径配置</a>
+                    <a href="#faq" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">常见问题</a>
+                    <a href="#changelog" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">更新日志</a>
+                    <a href="#support" class="px-2 md:px-3 py-2 text-xs md:text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">支持作者</a>
+                </div>
+                <!-- Tablet menu -->
+                <div class="hidden md:flex lg:hidden items-center space-x-1 overflow-x-auto">
+                    <a href="#interface" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">界面</a>
+                    <a href="#features" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">功能</a>
+                    <a href="#quickstart" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">开始</a>
+                    <a href="#shortcuts" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">快捷</a>
+                    <a href="#path" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">路径</a>
+                    <a href="#faq" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">问答</a>
+                    <a href="#changelog" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">日志</a>
+                    <a href="#support" class="px-2 py-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex-shrink-0">支持</a>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors" aria-label="菜单">
+                        <i class="fa fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-3 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-2 gap-2 px-2">
+                    <a href="#interface" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-desktop mr-1.5"></i>界面
+                    </a>
+                    <a href="#features" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-star mr-1.5"></i>功能
+                    </a>
+                    <a href="#quickstart" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-rocket mr-1.5"></i>开始
+                    </a>
+                    <a href="#shortcuts" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-bolt mr-1.5"></i>快捷
+                    </a>
+                    <a href="#path" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-folder mr-1.5"></i>路径
+                    </a>
+                    <a href="#faq" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-question mr-1.5"></i>问答
+                    </a>
+                    <a href="#changelog" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-history mr-1.5"></i>日志
+                    </a>
+                    <a href="#support" class="block px-3 py-2.5 text-sm text-center text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                        <i class="fa fa-heart mr-1.5"></i>支持
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden bg-white py-12 sm:py-16 md:py-20 lg:py-32">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center text-center">
+                <!-- Logo and Branding -->
+                <div class="flex flex-col items-center mb-6 sm:mb-8" data-aos="fade-up" data-aos-duration="800">
+                    <!-- New Logo -->
+                    <div class="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 flex items-center justify-center mb-4 sm:mb-6">
+                        <img src="assets/logo2.png" alt="Auto_Tinify Logo" class="w-full h-full object-contain">
+                    </div>
+
+                    <!-- Brand Name -->
+                    <h1 class="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-2" data-aos="fade-up" data-aos-duration="800" data-aos-delay="100">
+                        AUTO Tiny
+                    </h1>
+
+                    <!-- Chinese Slogan -->
+                    <div class="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-800 mb-4 sm:mb-6" data-aos="fade-up" data-aos-duration="800" data-aos-delay="200">
+                        快点鸭<span class="text-primary">·</span>压快点
+                    </div>
+
+                    <!-- Product Description -->
+                    <p class="text-base sm:text-lg md:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-2" data-aos="fade-up" data-aos-duration="800" data-aos-delay="300">
+                        主打简单快捷的 After Effects 图片压缩工具
+                    </p>
+                </div>
+
+                <!-- Badges -->
+                <div class="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 mb-6 sm:mb-8 md:mb-10" data-aos="fade-up" data-aos-duration="800" data-aos-delay="400">
+                    <span class="badge badge-blue text-xs sm:text-sm">v2.0.4</span>
+                    <span class="badge badge-green text-xs sm:text-sm">Windows &amp; Mac</span>
+                    <span class="badge badge-orange text-xs sm:text-sm">AE 2020+</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0" data-aos="fade-up" data-aos-duration="800" data-aos-delay="500">
+                    <a href="#download" class="btn-primary text-center w-full sm:w-auto">
+                        立即下载 v2.0.4
+                    </a>
+                    <a href="#documentation" class="btn-secondary text-center w-full sm:w-auto">
+                        查看文档
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="interface" class="py-8 md:py-12 scroll-mt-20 md:scroll-mt-16">
+        <div class="container mx-auto px-3 sm:px-4 lg:px-8">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2" data-aos="fade-up">软件界面</h2>
+                <p class="text-base text-gray-600 max-w-xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    直观的界面设计，让图片压缩变得简单高效
+                </p>
+            </div>
+            
+            <!-- Interface Showcase - Left Text, Right Screenshot -->
+            <div class="flex flex-col md:flex-row items-center gap-6 md:gap-8" data-aos="fade-up" data-aos-delay="200">
+                <!-- Left: Feature Description -->
+                <div class="md:w-1/2">
+                    <h3 class="text-xl font-bold mb-3">直观的用户界面</h3>
+                    <p class="text-gray-600 mb-4 text-sm">
+                        简洁明了的操作界面，让您轻松上手。
+                    </p>
+                    
+                    <!-- Key Features List -->
+                    <div class="space-y-3">
+                        <!-- Feature 1 -->
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-compress text-primary text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold mb-1">智能压缩</h4>
+                                <p class="text-gray-600 text-sm">使用Tinify API自动压缩图片</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Feature 2 -->
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-key text-primary text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold mb-1">多密钥管理</h4>
+                                <p class="text-gray-600 text-sm">多个API Key自动轮换</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Feature 3 -->
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-bolt text-primary text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-semibold mb-1">快捷操作</h4>
+                                <p class="text-gray-600 text-sm">Ctrl+Shift压缩选中文件</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right: Main Interface Screenshot -->
+                <div class="md:w-1/2">
+                    <div class="bg-white rounded-lg overflow-hidden shadow-lg">
+                        <!-- Screenshot Header -->
+                        <div class="p-2 bg-primary/5 border-b border-primary/10">
+                            <h3 class="text-base font-medium">主界面</h3>
+                        </div>
+                        <!-- Screenshot Content -->
+                        <div class="p-2">
+                            <img src="assets/main.jpg" alt="Auto_Tinify Main Interface" class="w-full h-auto rounded shadow-lg">
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Screenshots Preview -->
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <div class="bg-white rounded overflow-hidden shadow cursor-pointer">
+                            <img src="assets/keysettings.jpg" alt="API Key Settings" class="w-full h-16 object-cover">
+                            <div class="p-1 text-center">
+                                <span class="text-xs text-gray-600">API</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded overflow-hidden shadow cursor-pointer">
+                            <img src="assets/pathsettings.jpg" alt="Path Settings" class="w-full h-16 object-cover">
+                            <div class="p-1 text-center">
+                                <span class="text-xs text-gray-600">路径</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded overflow-hidden shadow cursor-pointer">
+                            <img src="assets/logpanel.jpg" alt="Log Panel" class="w-full h-16 object-cover">
+                            <div class="p-1 text-center">
+                                <span class="text-xs text-gray-600">日志</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16 bg-neutral-light">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4" data-aos="fade-up">核心功能</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    Auto_Tinify 提供 8 个强大特性，让您的 After Effects 图片压缩体验更加高效
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="100">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-compress text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">智能压缩</h3>
+                    <p class="text-gray-600">使用 Tinify API 压缩 JPG/PNG/WebP 格式图片</p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="200">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-key text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">多密钥轮换</h3>
+                    <p class="text-gray-600">支持多个 API Key 自动轮换使用</p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="300">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-folder-open text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">灵活路径</h3>
+                    <p class="text-gray-600">支持 ${projectPath} 变量配置输出路径</p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="400">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-bolt text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">快捷操作</h3>
+                    <p class="text-gray-600">Ctrl+Shift 压缩选中文件 / Alt 替换原图</p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="500">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-tachometer text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">实时监控</h3>
+                    <p class="text-gray-600">显示 API 剩余次数和当前输出路径</p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="600">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-file-text text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">日志记录</h3>
+                    <p class="text-gray-600">完整的操作日志记录</p>
+                </div>
+                
+                <!-- Feature 7 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="700">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-save text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">配置持久化</h3>
+                    <p class="text-gray-600">自动保存配置到文件，无需重复设置</p>
+                </div>
+                
+                <!-- Feature 8 -->
+                <div class="bg-white rounded-xl p-6 shadow-card hover:shadow-card-hover card-transition" data-aos="fade-up" data-aos-delay="800">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                        <i class="fa fa-puzzle-piece text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">项目集成</h3>
+                    <p class="text-gray-600">直接在 AE 项目中选择图片进行压缩</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quickstart" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4" data-aos="fade-up">快速开始</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    只需 4 步，即可开始使用 Auto_Tinify 进行图片压缩
+                </p>
+            </div>
+            
+            <div class="relative">
+                <!-- Timeline Line -->
+                <div class="hidden md:block absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-blue-100"></div>
+                
+                <!-- Step 1 -->
+                <div class="flex flex-col md:flex-row items-center mb-16" data-aos="fade-up">
+                    <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                        <h3 class="text-2xl font-semibold mb-2">第 1 步 安装</h3>
+                        <p class="text-gray-600">推荐使用 kbar 脚本管理器一键安装</p>
+                    </div>
+                    <div class="md:w-12 md:h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl z-10 mb-6 md:mb-0">
+                        1
+                    </div>
+                    <div class="md:w-1/2 md:pl-12">
+                        <div class="bg-neutral-light p-4 rounded-lg space-y-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 mb-1">方法1：手动安装</p>
+                                <code class="text-xs text-gray-600 block">下载 .jsxbin 文件复制到 AE 脚本目录</code>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 mb-1">方法2：脚本面板</p>
+                                <code class="text-xs text-gray-600 block">Window → Extensions → 拖入脚本</code>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-primary mb-1">方法3：kbar（强烈推荐）</p>
+                                <code class="text-xs text-gray-600 block">搜索 Auto_Tinify 点击安装</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="flex flex-col md:flex-row items-center mb-16" data-aos="fade-up" data-aos-delay="100">
+                    <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0 md:order-1 order-2">
+                        <div class="bg-neutral-light p-4 rounded-lg">
+                            <code class="text-sm text-gray-800">
+                                访问 https://tinify.com/developers<br>
+                                注册账号获取免费 API Key
+                            </code>
+                        </div>
+                    </div>
+                    <div class="md:w-12 md:h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl z-10 mb-6 md:mb-0 md:order-2 order-1">
+                        2
+                    </div>
+                    <div class="md:w-1/2 md:pl-12 md:order-3 order-3">
+                        <h3 class="text-2xl font-semibold mb-2">第 2 步 获取 API Key</h3>
+                        <p class="text-gray-600">访问 Tinify 官网注册账号，每月免费 500 次压缩</p>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="flex flex-col md:flex-row items-center mb-16" data-aos="fade-up" data-aos-delay="200">
+                    <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                        <h3 class="text-2xl font-semibold mb-2">第 3 步 配置</h3>
+                        <p class="text-gray-600">在脚本面板中设置 API Key 和输出路径</p>
+                    </div>
+                    <div class="md:w-12 md:h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl z-10 mb-6 md:mb-0">
+                        3
+                    </div>
+                    <div class="md:w-1/2 md:pl-12">
+                        <div class="bg-neutral-light p-4 rounded-lg">
+                            <code class="text-sm text-gray-800">
+                                API Key：点击面板的"API Key 设置"<br>
+                                输出路径：点击"路径设置"配置
+                            </code>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="flex flex-col md:flex-row items-center" data-aos="fade-up" data-aos-delay="300">
+                    <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0 md:order-1 order-2">
+                        <div class="bg-neutral-light p-4 rounded-lg">
+                            <code class="text-sm text-gray-800">
+                                点击"开始压缩"按钮<br>
+                                或 Ctrl+Shift+点击压缩选中文件
+                            </code>
+                        </div>
+                    </div>
+                    <div class="md:w-12 md:h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl z-10 mb-6 md:mb-0 md:order-2 order-1">
+                        4
+                    </div>
+                    <div class="md:w-1/2 md:pl-12 md:order-3 order-3">
+                        <h3 class="text-2xl font-semibold mb-2">第 4 步 开始压缩</h3>
+                        <p class="text-gray-600">点击"开始压缩"按钮即可</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Shortcuts Section -->
+    <section id="shortcuts" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16 bg-neutral-light">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4" data-aos="fade-up">快捷操作</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    掌握这些快捷键，让您的工作效率更高
+                </p>
+            </div>
+            
+            <div class="overflow-x-auto" data-aos="fade-up" data-aos-delay="200">
+                <table class="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-card">
+                    <thead>
+                        <tr class="bg-primary/5">
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">操作</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">快捷键</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">说明</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-sm">压缩选中文件</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Ctrl+Shift
+                                </span>
+                                + 点击"开始压缩"按钮
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">仅压缩选中的图片文件</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-sm">直接替换原图</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Alt
+                                </span>
+                                + 点击"开始压缩"按钮
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">压缩后直接覆盖原文件</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-sm">查看日志</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    📋
+                                </span>
+                                点击日志按钮
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">查看详细操作记录</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Path Configuration Section -->
+    <section id="path" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4" data-aos="fade-up">路径配置</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    灵活配置压缩输出路径，支持多种方式
+                </p>
+            </div>
+            
+            <div class="max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+                <!-- Variable Card -->
+                <div class="bg-white rounded-xl shadow-card p-6 mb-8">
+                    <h3 class="text-xl font-semibold mb-4">支持变量</h3>
+                    <div class="bg-neutral-light rounded-lg p-4">
+                        <code class="text-primary text-lg">${projectPath}</code>
+                        <span class="text-gray-600 ml-3">项目文件所在的父目录</span>
+                    </div>
+                </div>
+                
+                <!-- Examples Card -->
+                <div class="bg-white rounded-xl shadow-card p-6">
+                    <h3 class="text-xl font-semibold mb-4">配置示例</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-check text-success"></i>
+                            </div>
+                            <div>
+                                <code class="text-sm text-gray-800 bg-neutral-light px-2 py-1 rounded">${projectPath}/输出</code>
+                                <p class="text-gray-600 text-sm mt-1">输出到项目目录下的"输出"文件夹</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-check text-success"></i>
+                            </div>
+                            <div>
+                                <code class="text-sm text-gray-800 bg-neutral-light px-2 py-1 rounded">${projectPath}/compressed</code>
+                                <p class="text-gray-600 text-sm mt-1">输出到项目目录下的"compressed"文件夹</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                                <i class="fa fa-check text-success"></i>
+                            </div>
+                            <div>
+                                <code class="text-sm text-gray-800 bg-neutral-light px-2 py-1 rounded">D:/MyProject/images</code>
+                                <p class="text-gray-600 text-sm mt-1">使用绝对路径</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">常见问题</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    解答您可能遇到的问题
+                </p>
+            </div>
+            
+            <div class="max-w-3xl mx-auto space-y-4" data-aos="fade-up" data-aos-delay="200">
+                <!-- FAQ Item 1 -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card overflow-hidden">
+                    <button class="faq-toggle w-full flex justify-between items-center px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>压缩失败怎么办？</span>
+                        <i class="fa fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content px-6 pb-4 hidden">
+                        <p class="text-gray-600">
+                            压缩失败通常有以下原因：1. API Key 无效或已过期；2. 网络连接问题；3. 图片格式不支持。请检查 API Key 是否正确，网络连接是否正常，以及图片格式是否为 JPG、PNG 或 WebP。
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 2 -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card overflow-hidden">
+                    <button class="faq-toggle w-full flex justify-between items-center px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>免费额度用完怎么办？</span>
+                        <i class="fa fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content px-6 pb-4 hidden">
+                        <p class="text-gray-600">
+                            Tinify 每月提供 500 次免费压缩额度。如果用完，可以：1. 等待下个月额度重置；2. 注册新账号获取新的 API Key；3. 在 Auto_Tinify 中配置多个 API Key 进行轮换使用；4. 升级 Tinify 付费计划。
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 3 -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card overflow-hidden">
+                    <button class="faq-toggle w-full flex justify-between items-center px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>支持哪些图片格式？</span>
+                        <i class="fa fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content px-6 pb-4 hidden">
+                        <p class="text-gray-600">
+                            Auto_Tinify 支持压缩 JPG、PNG 和 WebP 格式的图片。这些是 After Effects 中最常用的图片格式，压缩后可以保持良好的视觉质量同时减小文件大小。
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- FAQ Item 4 -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card overflow-hidden">
+                    <button class="faq-toggle w-full flex justify-between items-center px-6 py-4 text-left font-medium focus:outline-none">
+                        <span>可以批量压缩吗？</span>
+                        <i class="fa fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                    </button>
+                    <div class="faq-content px-6 pb-4 hidden">
+                        <p class="text-gray-600">
+                            是的，Auto_Tinify 支持批量压缩。您可以在 After Effects 项目中选择多个图片文件，然后使用 Ctrl+Shift+点击"开始压缩"按钮进行批量压缩。压缩后的文件会保存在您设置的输出路径中。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Changelog Section -->
+    <section id="changelog" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16 bg-neutral-light">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">更新日志</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    了解 Auto_Tinify 的最新变化
+                </p>
+            </div>
+            
+            <div class="max-w-3xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-semibold">v2.0.4</h3>
+                        <span class="badge badge-blue">最新版本</span>
+                    </div>
+                    <ul class="space-y-2 text-gray-600 mb-6">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                            <span>修复了多密钥轮换时的稳定性问题</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                            <span>优化了压缩进度显示</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-success mt-1 mr-2"></i>
+                            <span>增加了对最新版 After Effects 的兼容性支持</span>
+                        </li>
+                    </ul>
+                    <a href="更新日志.md" class="text-primary hover:text-primary/80 font-medium flex items-center transition-colors">
+                        查看完整更新日志
+                        <i class="fa fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Support Section -->
+    <section id="support" class="py-16 md:py-20 scroll-mt-20 md:scroll-mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4" data-aos="fade-up">支持作者</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+                    如果这个脚本对你有帮助，欢迎请作者喝杯咖啡
+                </p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-8 max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="200">
+                <!-- WeChat Pay -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card p-6 flex-1">
+                    <div class="text-center mb-4">
+                        <h3 class="text-xl font-semibold">微信支付</h3>
+                    </div>
+                    <div class="flex justify-center">
+                        <img src="assets/微信.jpg" alt="WeChat Pay QR Code" class="w-48 h-48 object-contain">
+                    </div>
+                </div>
+                
+                <!-- Alipay -->
+                <div class="bg-white dark:bg-dark-100 rounded-xl shadow-card dark:shadow-dark-card p-6 flex-1">
+                    <div class="text-center mb-4">
+                        <h3 class="text-xl font-semibold">支付宝</h3>
+                    </div>
+                    <div class="flex justify-center">
+                        <img src="assets/支付宝.jpg" alt="Alipay QR Code" class="w-48 h-48 object-contain">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 text-gray-800 py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-6 md:mb-0">
+                    <div class="flex items-center">
+                        <img src="assets/logo.png" alt="Auto_Tinify Logo" class="w-8 h-8 mr-2">
+                        <span class="font-bold text-lg">Auto_Tinify</span>
+                    </div>
+                    <p class="text-gray-500 mt-2">简单快捷的 After Effects 图片压缩工具</p>
+                </div>
+                
+                <div class="flex flex-wrap justify-center gap-6">
+                    <a href="https://github.com/yancongya/auto_tinify" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-900 transition-colors">
+                        <i class="fa fa-github mr-1"></i> GitHub
+                    </a>
+                    <a href="https://github.com/yancongya/auto_tinify/issues" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-900 transition-colors">
+                        <i class="fa fa-bug mr-1"></i> Issues
+                    </a>
+                    <a href="https://tinify.com/developers" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-900 transition-colors">
+                        <i class="fa fa-code mr-1"></i> Tinify API
+                    </a>
+                    <a href="更新日志.md" class="text-gray-500 hover:text-gray-900 transition-colors">
+                        <i class="fa fa-file-text mr-1"></i> 更新日志
+                    </a>
+                </div>
+            </div>
+            
+            <hr class="border-gray-300 my-8">
+            
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 text-sm mb-4 md:mb-0">
+                    © 2026 Auto_Tinify. 保留所有权利。
+                </p>
+                <div class="flex items-center">
+                    <a href="#" class="text-gray-500 hover:text-gray-900 transition-colors mr-6">
+                        <span class="text-sm">MIT License</span>
+                    </a>
+                    <p class="text-gray-500 text-sm">
+                        Made with <i class="fa fa-heart text-red-500"></i> by yancongya
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="fixed bottom-8 right-8 bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg opacity-0 invisible transition-all duration-300">
+        <i class="fa fa-arrow-up"></i>
+    </button>
+
+    <script>
+        // Initialize AOS Animation Library
+        document.addEventListener('DOMContentLoaded', function() {
+            AOS.init({
+                duration: 800,
+                easing: 'ease-in-out',
+                once: true
+            });
+            
+            // Mobile Menu Toggle
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Close mobile menu when clicking a link
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            
+            // Smooth scroll for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        const headerOffset = 80;
+                        const elementPosition = target.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+            
+            // FAQ Toggle Functionality
+            const faqToggles = document.querySelectorAll('.faq-toggle');
+            faqToggles.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('i');
+                    
+                    // Toggle visibility
+                    if (content.classList.contains('hidden')) {
+                        content.classList.remove('hidden');
+                        icon.style.transform = 'rotate(180deg)';
+                    } else {
+                        content.classList.add('hidden');
+                        icon.style.transform = 'rotate(0)';
+                    }
+                });
+            });
+            
+            // Back to Top Button
+            const backToTopButton = document.getElementById('back-to-top');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTopButton.classList.remove('opacity-0', 'invisible');
+                    backToTopButton.classList.add('opacity-100', 'visible');
+                } else {
+                    backToTopButton.classList.remove('opacity-100', 'visible');
+                    backToTopButton.classList.add('opacity-0', 'invisible');
+                }
+            });
+            
+            backToTopButton.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Download Button Click Event
+            const downloadButton = document.querySelector('a[href="#download"]');
+            if (downloadButton) {
+                downloadButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('Auto_Tinify v2.0.4 下载即将开始...');
+                    // 实际项目中这里会跳转到下载链接
+                    window.open('https://github.com/yancongya/auto_tinify/releases', '_blank');
+                });
+            }
+            
+            // Documentation Button Click Event
+            const docButton = document.querySelector('a[href="#documentation"]');
+            if (docButton) {
+                docButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('正在跳转到文档页面...');
+                    // 实际项目中这里会跳转到文档链接
+                    window.open('https://github.com/yancongya/auto_tinify/blob/main/README.md', '_blank');
+                });
+            }
+        });
+    </script>
+
+</body></html>
