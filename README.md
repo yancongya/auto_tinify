@@ -11,7 +11,7 @@
 
 ---
 
-## 馨介
+## 介绍
 
 Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 Tinify API 提供高效、智能的图片压缩服务。支持批量压缩、多API Key轮换、自定义路径配置等强大功能，帮助您轻松优化项目中的图片资源。
 
@@ -229,3 +229,4 @@ MIT License - 详见 LICENSE 文件
 Made with 馃攽 by [yancongya](https://github.com/yancongya)
 
 </div>
+
