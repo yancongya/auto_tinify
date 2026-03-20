@@ -9,9 +9,10 @@ if ($currentBranch -ne "dev") {
     git checkout dev
 }
 
-# 2. Check for changes
+# 2. Check for changes or unpushed commits
 $status = git status --porcelain
-if (-not $status) {
+$unpushed = git log --oneline origin/dev..dev
+if (-not $status -and -not $unpushed) {
     Write-Host "No changes detected" -ForegroundColor Yellow
     $response = Read-Host "Continue publishing? (y/n)"
     if ($response -ne "y") {
