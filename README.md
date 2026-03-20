@@ -61,7 +61,7 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 ### 3. 配置
 
 - **API Key 设置**：点击主面板 `⚙ API Key 设置` 按钮，添加你的 API Key
-- **路径配置**：点击 `⚙ 路径设置` 按钮，配置压缩输出路径
+- **路径配置**：点击 `⚙ 路径设置` 按钮，配置要压缩的图片路径
 - 所有配置都会保存在脚本旁边的配置文件中，方便随时备份
 
 ### 4. 开始压缩
@@ -89,16 +89,16 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 
 **示例**：
 
-- `${projectPath}/输出`：压缩到项目目录怕旁边的"输出"文件夹
-- `${projectPath}/compressed`：压缩到项目目录怕旁边的压缩到输出到项目目录下的"compressed"文件夹
-- `D:/MyProject/images`：绝对路径
+- `${projectPath}/输出`：压缩项目目录旁边的"输出"文件夹中的图片
+- `${projectPath}/compressed`：压缩项目目录旁边的"compressed"文件夹中的图片
+- `D:/MyProject/images`：绝对路径（指定要压缩的图片目录）
 - 推荐直接复制prompt给ai进行生成正则表达式
 
 ### 界面说明
 
 ![主界面](assets/main.jpg)
 
-- **状态栏**：显示剩余次数和当前输出路径
+- **状态栏**：显示剩余次数和当前压缩路径
 - **压缩进度**：实时显示压缩进度
 
 ![日志面板](assets/logpanel.jpg)
@@ -142,7 +142,7 @@ JPG、PNG、WebP
 
 ### Q: 可以批量压缩多个项目吗？
 
-可以。脚本会根据当前项目的 `${projectPath}` 自动调整输出路径
+可以。脚本会根据当前项目的 `${projectPath}` 自动调整压缩路径
 
 ---
 
