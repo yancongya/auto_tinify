@@ -12,12 +12,16 @@
 
 ## 使用方法
 
-1. 下载 `public` 文件夹中的 `auto_tiny2.0.4.jsxbin` 文件
+1. 下载 `public` 文件夹中的**最新版本** `.jsxbin` 文件
 2. 将文件复制到 After Effects 的脚本目录：
    - Windows: `C:\Program Files\Adobe\Adobe After Effects [版本]\Support Files\Scripts\`
    - Mac: `/Applications/Adobe After Effects [版本]/Scripts/`
 3. 重启 After Effects
 4. 在 `Window` 菜单中找到脚本
+
+## 资源文件
+
+`assets` 文件夹包含脚本相关的图片资源和说明文档。
 
 ## 获取 API Key
 
