@@ -17,7 +17,7 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 
 ## 产品官网
 
-🌐 [产品官网](https://yancongya.github.io/auto_tinify/) | 📦 [下载安装](https://github.com/yancongya/auto_tinify/releases)
+🌐 [产品官网](https://yancongya.github.io/auto_tinify/) | 📦 [下载安装](https://github.com/yancongya/auto_tinify/tree/main/public) | 📦 [仓库地址](https://github.com/yancongya/auto_tinify)
 
 ## 主要特点
 
