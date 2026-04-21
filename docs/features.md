@@ -129,16 +129,12 @@ function updateKeyStatistics(apiKey, success) {
 ```javascript
 // 注册快捷键
 function registerKeyboardShortcuts() {
-    // Ctrl+Shift + 点击：仅压缩选中的图片
+    // Ctrl+Shift + 点击：压缩 AE 选中的图片
     var modifierMask = ScriptUI.environment.keyboardState.ctrlKey && 
                       ScriptUI.environment.keyboardState.shiftKey;
     
-    // Alt + 点击：直接替换原图
-    var altMask = ScriptUI.environment.keyboardState.altKey;
-    
     return {
-        compressSelected: modifierMask,
-        replaceOriginal: altMask
+        compressSelected: modifierMask
     };
 }
 ```
@@ -148,14 +144,11 @@ function registerKeyboardShortcuts() {
 // 根据快捷键执行不同操作
 function handleQuickAction(files, modifiers) {
     if (modifiers.compressSelected) {
-        // 仅压缩选中的文件
+        // 压缩 AE 选中的文件
         return compressSelectedFiles(files);
-    } else if (modifiers.replaceOriginal) {
-        // 压缩并替换原图
-        return compressAndReplace(files);
     } else {
-        // 默认操作：压缩到新文件
-        return compressToNewFiles(files);
+        // 默认操作：压缩配置路径下的文件夹
+        return compressConfigFolder();
     }
 }
 ```
@@ -169,15 +162,11 @@ function showActionFeedback(action) {
     
     switch(action) {
         case "compress_selected":
-            feedbackText = "仅压缩选中文件";
+            feedbackText = "压缩选中文件";
             feedbackColor = COLORS.accent;
             break;
-        case "replace_original":
-            feedbackText = "压缩并替换原图";
-            feedbackColor = COLORS.warning;
-            break;
         default:
-            feedbackText = "压缩到新文件";
+            feedbackText = "压缩文件夹";
             feedbackColor = COLORS.success;
     }
     
@@ -433,7 +422,7 @@ function saveLogToFile(logs, filename) {
 ```javascript
 // 默认配置
 var defaultConfig = {
-    version: "2.0.4",
+    version: "2.0.5",
     apiKeys: [],
     settings: {
         outputPath: "${projectPath}/compressed",
@@ -677,12 +666,15 @@ function resumeCompression(files, startIndex) {
 **功能特点总结**：
 1. **高质量压缩**：保持视觉质量的同时最大化文件压缩
 2. **智能管理**：多API密钥自动轮换，避免使用限制
-3. **便捷操作**：快捷键支持，一键完成复杂操作
+3. **便捷操作**：Ctrl+Shift快捷键压缩选中文件
 4. **灵活配置**：支持变量路径和正则表达式匹配
 5. **实时反馈**：清晰的进度指示和状态显示
 6. **完整日志**：详细的处理记录，便于问题排查
 7. **持久配置**：自动保存用户设置，下次启动恢复
 8. **项目集成**：直接操作AE项目中的图片资源
+9. **便捷选择**：通过对话框快速选择文件/文件夹进行压缩
+10. **压缩对比**：压缩前预先保存文件大小，完成后准确显示对比数据
+11. **统一交互**：所有压缩入口统一询问"替换原图"或"添加后缀保存副本"，无Alt键快捷键
 
-**文档版本**：1.0  
-**最后更新**：2026-03-21
+**文档版本**：1.1  
+**最后更新**：2026-04-21

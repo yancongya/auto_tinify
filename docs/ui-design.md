@@ -8,7 +8,7 @@ Auto_Tinify 使用 ScriptUI 框架构建，采用经典的三栏式布局：
 ```
 ┌─────────────────────────────────────────────┐
 │                标题栏                        │
-│  [关闭] [最小化] [最大化] Auto_Tinify v2.0.4  │
+│  [关闭] [最小化] [最大化] Auto_Tinify v2.0.5  │
 ├─────────────────────────────────────────────┤
 │                 主内容区                     │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐   │
@@ -247,31 +247,40 @@ function createCompressionPanel(parent) {
     panel.alignChildren = ["fill", "top"];
     panel.spacing = 8;
     
-    // 文件选择区域
-    var fileGroup = panel.add("group");
-    fileGroup.orientation = "row";
+    // 第一行：开始压缩（独占一行）
+    var row1 = panel.add("group");
+    row1.orientation = "row";
+    var startBtn = row1.add("button", undefined, "开始压缩");
+    startBtn.preferredSize.width = 315;
+    startBtn.helpTip = "点击：压缩并询问是否替换原图\n按住 Ctrl+Shift 键点击：压缩选中的图片文件";
     
-    var fileBtn = fileGroup.add("button", undefined, "选择文件");
-    var folderBtn = fileGroup.add("button", undefined, "选择文件夹");
-    var clearBtn = fileGroup.add("button", undefined, "清空");
+    // 第二行：选择文件 + 选择文件夹
+    var row2 = panel.add("group");
+    row2.orientation = "row";
+    var fileBtn = row2.add("button", undefined, "选择文件");
+    var folderBtn = row2.add("button", undefined, "选择文件夹");
     
-    // 文件列表
-    var fileList = panel.add("listbox", undefined, [], {
-        numberOfColumns: 3,
-        showHeaders: true,
-        columnWidths: [150, 80, 100]
-    });
-    fileList.columns = ["文件名", "大小", "状态"];
+    // 第三行：API Key 设置 + 路径设置
+    var row3 = panel.add("group");
+    row3.orientation = "row";
+    var apiKeyBtn = row3.add("button", undefined, "⚙ API Key设置");
+    var pathBtn = row3.add("button", undefined, "⚙ 路径设置");
     
-    // 操作按钮
-    var btnGroup = panel.add("group");
-    var startBtn = btnGroup.add("button", undefined, "开始压缩");
-    var pauseBtn = btnGroup.add("button", undefined, "暂停");
+    // 第四行：日志 + 帮助
+    var row4 = panel.add("group");
+    row4.orientation = "row";
+    var logBtn = row4.add("button", undefined, "📋 日志");
+    var helpBtn = row4.add("button", undefined, "?");
+    
+    // 进度条及状态
+    var progressBar = panel.add("progressbar", undefined, 0, 100);
+    var statusText = panel.add("statictext", undefined, "剩余 500/500");
     
     return {
         panel: panel,
-        fileList: fileList,
-        startBtn: startBtn
+        startBtn: startBtn,
+        fileBtn: fileBtn,
+        folderBtn: folderBtn
     };
 }
 ```
@@ -458,5 +467,5 @@ var title = TEXTS.title;
 
 **设计原则**：保持与 After Effects 原生界面的一致性，提供直观、高效的用户体验。
 
-**文档版本**：1.0  
-**最后更新**：2026-03-21
+**文档版本**：1.1  
+**最后更新**：2026-04-21

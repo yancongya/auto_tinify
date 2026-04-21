@@ -747,9 +747,10 @@ class ShortcutHandler {
         for (var i = 0; i < shortcuts.length; i++) {
             var shortcut = shortcuts[i];
             
+            // 仅 Ctrl+Shift 组合
             if (shortcut.ctrl === event.ctrlKey &&
                 shortcut.shift === event.shiftKey &&
-                shortcut.alt === event.altKey) {
+                !event.altKey) {
                 
                 shortcut.callback(event);
                 return true;
@@ -847,7 +848,7 @@ class ConfigManager {
      */
     getDefaultConfig() {
         return {
-            version: "2.0.4",
+            version: "2.0.5",
             apiKeys: [],
             settings: {
                 outputPath: "${projectPath}/compressed",
@@ -1099,5 +1100,5 @@ function delay(ms) {
 
 **注意**：所有函数都基于 ExtendScript (ECMAScript 3) 标准，不支持现代 JavaScript 特性。
 
-**文档版本**：1.0  
-**最后更新**：2026-03-21
+**文档版本**：1.1  
+**最后更新**：2026-04-21
