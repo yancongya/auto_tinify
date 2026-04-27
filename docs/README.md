@@ -1,8 +1,8 @@
-# Auto_Tinify 文档目录（AE脚本专用）
+# Auto_Tinify 文档目录（AE/PS 双平台脚本）
 
 ## 文档清单（优化版）
 
-以下是针对After Effects脚本开发的文档结构，涵盖AE集成、ScriptUI、ExtendScript等特定内容：
+以下是针对 After Effects / Photoshop 脚本开发的文档结构，涵盖 AE/PS 集成、ScriptUI、ExtendScript 等内容：
 
 ### 1. 项目概述
 - **文件名**: `overview.md`

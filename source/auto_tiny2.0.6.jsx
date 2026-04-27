@@ -303,7 +303,29 @@ buttonRow1.spacing = 15;
 
 var uploadButton = buttonRow1.add("button", undefined, "开始压缩");
 uploadButton.preferredSize.width = 315;
-uploadButton.helpTip = "点击：压缩并询问是否替换原图\n按住 Ctrl+Shift 键点击：AE-压缩选中素材 / PS-导出选中图层并压缩";
+uploadButton.helpTip = "点击：压缩并询问是否替换原图\nCtrl+Shift：导出选中图层为 PNG 并压缩\nAlt（仅AE）：压缩项目中选中的图片素材";
+
+// 按钮文本随快捷键动态切换
+var _btnDefaultText = "开始压缩";
+var _btnCtrlShiftText = "导出图层并压缩";
+var _btnAltText = "压缩选中素材";
+function updateButtonText() {
+    try {
+        var ks = ScriptUI.environment.keyboardState;
+        var ctrl = ks.ctrlKey || ks.metaKey;
+        var shift = ks.shiftKey;
+        var alt = ks.altKey;
+        if (ctrl && shift) {
+            uploadButton.text = _btnCtrlShiftText;
+        } else if (alt && !isPhotoshop) {
+            uploadButton.text = _btnAltText;
+        } else {
+            uploadButton.text = _btnDefaultText;
+        }
+    } catch (e) {}
+}
+win.addEventListener("keydown", updateButtonText);
+win.addEventListener("keyup", updateButtonText);
 
 // PS 导出目录输入行
 var exportRow = mainPanel.add("group");
@@ -322,9 +344,9 @@ exportFolderInput.onChange = function() {
 
 // 点击"导出目录"标签 → 读取选中图层
 exportLabel.addEventListener("click", function() {
-    if (!isPhotoshop) return;
     updateExportTooltip();
     if (psSelectedLayerNames.length > 0) {
+        var envName = isPhotoshop ? "PS" : "AE";
         var msg = "检测到 " + psSelectedLayerNames.length + " 个选中图层：\n";
         for (var i = 0; i < psSelectedLayerNames.length; i++) {
             msg += "  " + psSelectedLayerNames[i] + "\n";
@@ -333,13 +355,13 @@ exportLabel.addEventListener("click", function() {
         alert(msg);
     } else {
         addLog("未检测到选中图层");
-        alert("未检测到选中图层！\n请先在图层面板中选中要导出的图层。");
+        alert("未检测到选中图层！\n请先选中要导出的图层。");
     }
 });
 exportLabel.helpTip = "点击读取当前选中图层";
 
-// PS 才显示导出目录行
-exportRow.visible = isPhotoshop;
+// 导出目录行 PS/AE 均显示
+exportRow.visible = true;
 
 // 第二行按钮
 var buttonRow2 = mainPanel.add("group");
@@ -1045,7 +1067,8 @@ function showHelpWindow() {
     descText = descPanel.add("statictext", undefined, "• 支持多 API Key 轮换，自动追踪剩余次数", undefined);
     descText = descPanel.add("statictext", undefined, "• 支持路径配置，使用 ${projectPath} 变量", undefined);
     descText = descPanel.add("statictext", undefined, "• 点击\"开始压缩\"：询问替换原图或添加后缀保存", undefined);
-    descText = descPanel.add("statictext", undefined, "• Ctrl+Shift + 点击：AE-压缩选中素材 / PS-导出选中图层并压缩", undefined);
+    descText = descPanel.add("statictext", undefined, "• Ctrl+Shift + 点击：导出选中图层为 PNG 并压缩（AE/PS）", undefined);
+    descText = descPanel.add("statictext", undefined, "• Alt + 点击（仅AE）：压缩项目中选中的图片素材文件", undefined);
     descText = descPanel.add("statictext", undefined, "• 选择文件/文件夹：快速选择目标进行压缩", undefined);
 
     // 使用说明
@@ -1528,19 +1551,30 @@ function getPSSelectedLayers() {
     return selected;
 }
 
-// PS: 获取选中图层名称列表（用于悬浮提示）
+// 获取选中图层名称列表（PS/AE 双平台）
 function getSelectedLayerNames() {
     var names = [];
-    var layers = getPSSelectedLayers();
-    for (var i = 0; i < layers.length; i++) {
-        names.push(layers[i].name);
+    if (isPhotoshop) {
+        var layers = getPSSelectedLayers();
+        for (var i = 0; i < layers.length; i++) {
+            names.push(layers[i].name);
+        }
+    } else {
+        // AE: 从活动合成获取选中图层
+        try {
+            if (app.project && app.project.activeItem && app.project.activeItem instanceof CompItem) {
+                var selectedLayers = app.project.activeItem.selectedLayers;
+                for (var i = 0; i < selectedLayers.length; i++) {
+                    names.push(selectedLayers[i].name);
+                }
+            }
+        } catch (e) {}
     }
     return names;
 }
 
-// 更新 PS 导出目录悬浮提示
+// 更新导出目录悬浮提示（PS/AE 双平台）
 function updateExportTooltip() {
-    if (!isPhotoshop) return;
     psSelectedLayerNames = getSelectedLayerNames();
     var tip = "导出目录: " + psExportFolderName + "\n";
     if (psSelectedLayerNames.length > 0) {
@@ -1709,6 +1743,205 @@ function exportAndCompressPSSelectedLayers() {
         "节省了: " + formatFileSize(savedSize) + " (" + savingsPercent + "%)");
 }
 
+// ======================== AE 图层导出压缩 ========================
+
+// AE: 导出选中图层为 PNG（渲染方式），然后压缩替换
+function exportAndCompressAESelectedLayers() {
+    // 检查项目状态
+    if (!app.project || !app.project.file) {
+        alert("请先保存项目！");
+        addLog("错误：项目未保存");
+        return;
+    }
+
+    if (!app.project.activeItem || !(app.project.activeItem instanceof CompItem)) {
+        alert("请先打开一个合成！");
+        addLog("错误：未打开合成");
+        return;
+    }
+
+    var comp = app.project.activeItem;
+    var selectedLayers = comp.selectedLayers;
+    if (selectedLayers.length === 0) {
+        alert("请先选中要导出的图层！");
+        addLog("错误：未选中任何图层");
+        return;
+    }
+
+    // 创建导出目录
+    var exportFolder = new Folder(app.project.file.parent.fsName + "/" + psExportFolderName);
+    if (!exportFolder.exists) {
+        exportFolder.create();
+    }
+
+    addLog("AE 导出选中图层：共 " + selectedLayers.length + " 个");
+    addLog("导出目录：" + exportFolder.fsName);
+
+    // 保存渲染队列状态
+    var rqBackup = [];
+    try {
+        for (var b = 1; b <= app.project.renderQueue.numItems; b++) {
+            var rqItem = app.project.renderQueue.item(b);
+            rqBackup.push(rqItem.render);
+            rqItem.render = false;
+        }
+    } catch (e) {}
+
+    var exportedFiles = [];
+    app.beginUndoGroup("Auto_Tinify 导出图层");
+
+    for (var i = 0; i < selectedLayers.length; i++) {
+        var layer = selectedLayers[i];
+        var cleanName = layer.name.replace(/[\/\\:*?"<>|]/g, "_");
+        addLog("[" + (i + 1) + "/" + selectedLayers.length + "] 导出图层: " + layer.name);
+
+        var tempComp = null;
+        var rqItem = null;
+
+        try {
+            // 获取图层尺寸
+            var w = comp.width;
+            var h = comp.height;
+            if (layer.source) {
+                w = Math.max(4, layer.source.width || comp.width);
+                h = Math.max(4, layer.source.height || comp.height);
+            }
+
+            // 创建临时合成
+            tempComp = app.project.items.addComp("_tinify_temp_" + cleanName, w, h, 1, 1, 1);
+
+            // 添加图层源到临时合成
+            if (layer.source) {
+                var newLayer = tempComp.layers.add(layer.source);
+                // 如果是视频，定位到第一帧
+                if (layer.source.duration && layer.source.duration > 1 / comp.frameRate) {
+                    newLayer.startTime = 0;
+                    newLayer.inPoint = 0;
+                    newLayer.outPoint = 1 / comp.frameRate;
+                    tempComp.time = 0;
+                }
+            } else {
+                // 无源素材，复制图层到临时合成
+                layer.copyToComp(tempComp);
+            }
+
+            // 添加到渲染队列
+            rqItem = app.project.renderQueue.items.add(tempComp);
+            rqItem.render = true;
+
+            // 设置 PNG 输出
+            var outputModule = rqItem.outputModule(1);
+            var templates = outputModule.templates;
+            if (templates.length > 0) {
+                outputModule.applyTemplate(templates[templates.length - 1]);
+            }
+
+            var outputFile = new File(exportFolder.fsName + "/" + cleanName + ".png");
+            outputModule.file = outputFile;
+
+            // 渲染
+            app.project.renderQueue.render();
+
+            // AE 单帧渲染会在文件名后加序号，需要重命名
+            var renderedFile = new File(exportFolder.fsName + "/" + cleanName + ".png00000");
+            if (renderedFile.exists) {
+                renderedFile.rename(cleanName + ".png");
+                outputFile = new File(exportFolder.fsName + "/" + cleanName + ".png");
+            }
+
+            if (outputFile.exists && outputFile.length > 0) {
+                exportedFiles.push(outputFile);
+                addLog("  已导出: " + outputFile.name + " (" + formatFileSize(outputFile.length) + ")");
+            } else {
+                addLog("  导出失败：文件不存在或为空");
+            }
+
+        } catch (e) {
+            addLog("  导出异常: " + e.toString());
+        }
+
+        // 清理
+        if (rqItem) {
+            try { rqItem.remove(); } catch (e) {}
+        }
+        if (tempComp) {
+            try { tempComp.remove(); } catch (e) {}
+        }
+    }
+
+    app.endUndoGroup();
+
+    // 恢复渲染队列
+    try {
+        for (var b = 0; b < rqBackup.length; b++) {
+            app.project.renderQueue.item(b + 1).render = rqBackup[b];
+        }
+    } catch (e) {}
+
+    if (exportedFiles.length === 0) {
+        alert("导出失败，未生成任何 PNG 文件！");
+        addLog("错误：导出失败");
+        return;
+    }
+
+    addLog("导出完成，共 " + exportedFiles.length + " 个 PNG，开始压缩...");
+
+    // 压缩导出的 PNG
+    var successCount = 0;
+    var failCount = 0;
+    var totalSize = 0;
+    var originalTotalSize = 0;
+
+    progressBar.value = 0;
+
+    for (var k = 0; k < exportedFiles.length; k++) {
+        var inputFile = exportedFiles[k];
+        var originalSize = inputFile.length;
+        var tempOutput = new File(Folder.temp.fsName + "/tinify_ae_" + (new Date().getTime()) + ".png");
+
+        var result = compressImage(getCurrentApiKey(), inputFile, tempOutput, getCurrentApiKeyIndex());
+
+        if (result.success) {
+            try {
+                inputFile.remove();
+                tempOutput.copy(inputFile);
+                successCount++;
+                totalSize += result.size;
+                originalTotalSize += result.originalSize;
+                getNextApiKey();
+            } catch (e) {
+                addLog("  替换文件失败: " + inputFile.fsName);
+                failCount++;
+            }
+        } else {
+            failCount++;
+        }
+
+        if (tempOutput.exists) tempOutput.remove();
+
+        progressBar.value = Math.round(((k + 1) / exportedFiles.length) * 100);
+        win.update();
+    }
+
+    addLog("\n========== 压缩完成 ==========");
+    addLog("成功: " + successCount + " 个文件");
+    addLog("失败: " + failCount + " 个文件");
+    addLog("压缩前总大小: " + formatFileSize(originalTotalSize));
+    addLog("压缩后总大小: " + formatFileSize(totalSize));
+    updateStatusText();
+    progressBar.value = 100;
+
+    var savedSize = originalTotalSize - totalSize;
+    var savingsPercent = originalTotalSize > 0 ? ((savedSize / originalTotalSize) * 100).toFixed(2) : 0;
+    alert("导出并压缩完成！\n\n" +
+        "导出目录: " + exportFolder.fsName + "\n" +
+        "成功: " + successCount + " 个文件\n" +
+        "失败: " + failCount + " 个文件\n\n" +
+        "压缩前: " + formatFileSize(originalTotalSize) + "\n" +
+        "压缩后: " + formatFileSize(totalSize) + "\n" +
+        "节省了: " + formatFileSize(savedSize) + " (" + savingsPercent + "%)");
+}
+
 // ======================== 按钮点击事件 ========================
 
 // 开始压缩
@@ -1728,32 +1961,37 @@ uploadButton.onClick = function() {
     var ctrlPressed = ScriptUI.environment.keyboardState.ctrlKey || ScriptUI.environment.keyboardState.metaKey;
     var shiftPressed = ScriptUI.environment.keyboardState.shiftKey;
 
-    // Ctrl+Shift 点击：AE 压缩选中素材 / PS 导出选中图层并压缩
+    // Ctrl+Shift 点击：AE/PS 导出选中图层并压缩
     if (ctrlPressed && shiftPressed) {
         if (isPhotoshop) {
-            // PS: 导出选中图层为 PNG 并压缩
             exportAndCompressPSSelectedLayers();
+            return;
+        } else {
+            exportAndCompressAESelectedLayers();
+            return;
+        }
+    }
+
+    // Alt 点击（仅AE）：压缩项目中选中的图片素材文件
+    var altPressed = ScriptUI.environment.keyboardState.altKey;
+    if (altPressed && !isPhotoshop) {
+        addLog("检测到 Alt 键，准备压缩选中的图片素材...");
+
+        var selectedFiles = getSelectedImageFiles();
+
+        if (selectedFiles.length === 0) {
+            alert("未找到选中的图片素材！\n\n请先在项目面板或合成中选择图片素材图层。");
+            addLog("错误：未找到选中的图片素材");
             return;
         }
 
-        addLog("检测到 Ctrl+Shift 组合键，准备压缩选中的图片文件...");
-        
-        var selectedFiles = getSelectedImageFiles();
-        
-        if (selectedFiles.length === 0) {
-            alert("未找到选中的图片文件！\n\n请先在项目面板或合成中选择图片图层。");
-            addLog("错误：未找到选中的图片文件");
-            return;
-        }
-        
-        addLog("找到 " + selectedFiles.length + " 个选中的图片文件：");
+        addLog("找到 " + selectedFiles.length + " 个选中的图片素材：");
         for (var i = 0; i < selectedFiles.length; i++) {
             addLog("  " + selectedFiles[i].fsName);
         }
-        
-        // 询问是否替换原图
+
         var replaceOriginal = confirm("是否直接替换原图？\n\n是 = 直接替换原图\n否 = 压缩后添加后缀 (_tiny) 保存到原图旁边");
-        
+
         if (replaceOriginal) {
             var confirmResult = confirm("即将压缩并直接替换原图！\n\n⚠️ 此操作将覆盖原始文件，请确认是否继续？");
             if (!confirmResult) {
@@ -1762,28 +2000,28 @@ uploadButton.onClick = function() {
                 return;
             }
         }
-        
-        addLog("开始压缩选中的图片文件..." + (replaceOriginal ? "（将直接替换原图）" : "（添加后缀保存到原图旁边）"));
+
+        addLog("开始压缩选中的图片素材..." + (replaceOriginal ? "（将直接替换原图）" : "（添加后缀保存到原图旁边）"));
         statusText.text = "状态：开始压缩...";
         progressBar.value = 0;
-        
+
         var successCount = 0;
         var failCount = 0;
         var totalSize = 0;
         var originalTotalSize = 0;
-        
+
         for (var i = 0; i < selectedFiles.length; i++) {
             var inputFile = selectedFiles[i];
             var outputFile;
-            
+
             if (replaceOriginal) {
                 outputFile = inputFile;
             } else {
                 outputFile = addSuffixToFileName(inputFile, "_tiny");
             }
-            
+
             var result = compressImage(getCurrentApiKey(), inputFile, outputFile, currentKeyIndex);
-            
+
             if (result.success) {
                 successCount++;
                 totalSize += result.size;
@@ -1792,11 +2030,11 @@ uploadButton.onClick = function() {
             } else {
                 failCount++;
             }
-            
+
             progressBar.value = Math.round(((i + 1) / selectedFiles.length) * 100);
             win.update();
         }
-        
+
         addLog("\n========== 压缩完成 ==========");
         addLog("成功: " + successCount + " 个文件");
         addLog("失败: " + failCount + " 个文件");

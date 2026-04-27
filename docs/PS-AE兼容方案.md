@@ -83,14 +83,15 @@ function resolvePathPattern(pattern) {
 
 ---
 
-## 四、Ctrl+Shift 功能差异
+## 四、快捷键功能映射
 
-AE 和 PS 中 Ctrl+Shift 点击"开始压缩"的行为不同：
+| 快捷键 | AE | PS |
+|--------|----|----|
+| 点击 | 压缩配置路径下的文件夹 | 压缩配置路径下的文件夹 |
+| Ctrl+Shift | 导出选中图层为 PNG 并压缩 | 导出选中图层为 PNG 并压缩 |
+| Alt | 压缩项目中选中的图片素材文件 | — |
 
-| 宿主 | 行为 | 说明 |
-|------|------|------|
-| AE | 压缩选中素材文件 | 从项目面板/合成中获取选中的图片素材 |
-| PS | 导出选中图层并压缩 | 逐个图层导出 PNG → Tinify 压缩替换 |
+按钮文本随按键动态切换：`开始压缩` / `导出图层并压缩` / `压缩选中素材`（通过 `keydown`/`keyup` 事件监听）。
 
 ### PS 图层导出压缩流程
 
@@ -127,12 +128,27 @@ for (var i = 0; i < list.count; i++) {
 
 ### PS 导出目录输入框
 
-在面板中"开始压缩"按钮下方增加导出目录输入行（仅 PS 显示）：
+在面板中"开始压缩"按钮下方增加导出目录输入行（AE/PS 均显示）：
 - 默认值 `images`，修改后自动保存
 - 点击 **"导出目录:"** 标签 → 读取当前选中图层，弹窗显示列表并写入日志
 - 悬浮提示显示待导出图层名称
 
-> 参考脚本：`source/reference/导出选中图层为PSD.jsx`，简化为直接导出 PNG 而非先存 PSD。
+> PS 参考脚本：`source/reference/导出选中图层为PSD.jsx`，简化为直接导出 PNG 而非先存 PSD。
+> AE 参考脚本：`source/reference/Eagle2Ae-Ae/jsx/hostscript.jsx`，使用渲染队列导出单帧 PNG。
+
+### AE 图层导出压缩流程
+
+1. 检查项目已保存、合成已打开、有选中图层
+2. 在项目文件旁边创建导出目录
+3. 保存渲染队列状态，清空现有渲染项
+4. 逐个图层处理：
+   - 创建临时合成（按图层源素材尺寸）
+   - 添加图层源到临时合成
+   - 渲染队列渲染为 PNG（使用最后一个输出模板）
+   - AE 单帧渲染会加 `00000` 后缀，需重命名
+   - 清理临时合成和渲染队列项
+5. 恢复渲染队列状态
+6. 对所有导出的 PNG 进行 Tinify 压缩替换
 
 ### AE 专属 API 禁用清单
 
@@ -222,11 +238,13 @@ function callSystem(cmd) {
 | `resolvePathPattern` | PS 用 `app.activeDocument.path`，AE 用 `app.project.file` |
 | `getSelectedImageFiles` | PS 入口直接返回空数组 |
 | `getPSSelectedLayers` | **新增** PS 多选图层检测（targetLayers + executeActionGet） |
-| `getSelectedLayerNames` | **新增** PS 选中图层名称列表 |
-| `updateExportTooltip` | **新增** 更新导出目录悬浮提示 |
+| `getSelectedLayerNames` | **新增** AE/PS 双平台选中图层名称列表 |
+| `updateExportTooltip` | **新增** 更新导出目录悬浮提示（AE/PS） |
 | `exportAndCompressPSSelectedLayers` | **新增** PS 图层导出压缩函数 |
-| UI | 新增 PS 导出目录输入行，点击标签读取选中图层 |
-| `uploadButton.onClick` | Ctrl+Shift：AE 压缩素材 / PS 导出图层并压缩 |
+| `exportAndCompressAESelectedLayers` | **新增** AE 图层导出压缩函数（渲染队列） |
+| UI | 新增导出目录输入行（AE/PS 均显示），点击标签读取选中图层 |
+| `uploadButton.onClick` | Ctrl+Shift 双平台导出 / Alt 仅 AE 素材压缩 |
+| `keydown`/`keyup` | **新增** 按钮文本动态切换 |
 | `urlOpen` | `system.callSystem` → `callSystem` |
 | `getApiKeyUsageCount` | `system.callSystem` → `callSystem` |
 | `compressImage` | `system.callSystem` → `callSystem` |
@@ -234,7 +252,7 @@ function callSystem(cmd) {
 | 窗口标题 | 末尾添加 `[PS]` / `[AE]` 环境标识 |
 | 未保存提示 | PS/AE 分别显示不同文案 |
 | 启动日志 | 输出当前运行环境 |
-| 帮助文本 | 更新 Ctrl+Shift 功能描述（双平台） |
+| 帮助文本 | 更新快捷键功能描述（三模式） |
 
 ---
 
@@ -248,6 +266,8 @@ function callSystem(cmd) {
 | `system.callSystem` 不存在 | curl 命令执行报错 | PS 改用 `app.system()` |
 | `getIdentifier` 报错 | PS 多选图层只识别一个 | 改用 `executeActionGet(layerRef)` 提取信息 |
 | dialog 标题被覆盖 | PS 标题栏显示宿主版本 | PS 固有行为，无法改变 |
+| `onDraw` 覆盖按钮绘制 | 按钮不显示 | 改用 `keydown`/`keyup` 事件监听 |
+| AE 单帧渲染后缀 | 渲染文件名加 `00000` | 渲染后重命名去掉后缀 |
 
 ---
 
@@ -257,12 +277,12 @@ function callSystem(cmd) {
 |--------|----|----|
 | 窗口打开 | palette 常驻 | dialog 模态 |
 | 窗口标题 | 正常显示版本 | PS 追加宿主版本（固有行为） |
-| 导出目录输入框 | 不显示 | 显示，默认 `images`，可修改 |
-| 点击"导出目录:"标签 | — | 读取选中图层，弹窗+日志 |
-| 图层多选识别 | — | `executeActionGet` 提取 layerID + name |
-| 未保存时 `${projectPath}` | 显示 "未保存项目" | 显示 "未保存项目" |
-| 已保存时 `${projectPath}` | 项目文件所在目录 | 文档所在目录 |
-| Ctrl+Shift | 压缩选中素材文件 | 导出选中图层为 PNG 并压缩 |
+| 导出目录输入框 | 显示，默认 `images`，可修改 | 显示，默认 `images`，可修改 |
+| 点击"导出目录:"标签 | 读取选中图层，弹窗+日志 | 读取选中图层，弹窗+日志 |
+| 图层多选识别 | `selectedLayers` | `executeActionGet` 提取 layerID + name |
+| 按钮文本切换 | 三模式动态切换 | 三模式动态切换 |
+| Ctrl+Shift | 导出选中图层渲染 PNG 并压缩 | 导出选中图层复制 PNG 并压缩 |
+| Alt | 压缩项目中选中的图片素材 | — |
 | 选择文件压缩 | 正常工作 | 正常工作 |
 | 选择文件夹压缩 | 正常工作 | 正常工作 |
 | curl 命令执行 | `system.callSystem` | `app.system` |

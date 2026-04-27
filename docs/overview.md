@@ -2,15 +2,15 @@
 
 ## 1. 项目介绍
 
-Auto_Tinify 是一款专为 Adobe After Effects 设计的图片压缩工具脚本。它通过集成 Tinify API（即知名的 TinyPNG/TinyJPG 服务），为 AE 用户提供高效、智能的图片压缩解决方案。
+Auto_Tinify 是一款支持 Adobe After Effects 和 Photoshop 的图片压缩工具脚本。它通过集成 Tinify API（即知名的 TinyPNG/TinyJPG 服务），为 AE/PS 用户提供高效、智能的图片压缩解决方案。
 
-本脚本旨在解决 After Effects 项目中图片资源体积过大的问题，帮助用户在不损失视觉质量的前提下，显著减小项目文件大小，提升项目性能和协作效率。
+本脚本旨在解决 AE/PS 项目中图片资源体积过大的问题，帮助用户在不损失视觉质量的前提下，显著减小项目文件大小，提升项目性能和协作效率。
 
 ## 2. 设计目标
 
 ### 2.1 核心目标
 - **高效压缩**：利用 Tinify API 的先进压缩算法，实现高质量图片压缩
-- **无缝集成**：作为原生 AE 脚本，与 After Effects 完美融合
+- **无缝集成**：作为原生 AE/PS 脚本，与 After Effects 和 Photoshop 完美融合
 - **智能管理**：自动处理多个 API Key，避免调用限制
 - **用户友好**：提供直观的 ScriptUI 面板和便捷的操作流程
 
@@ -49,7 +49,8 @@ Auto_Tinify 是一款专为 Adobe After Effects 设计的图片压缩工具脚�
    - 详细的日志记录
 
 ### 3.2 快捷操作
-- `Ctrl+Shift + 点击`：压缩 AE 选中的图片文件
+- `Ctrl+Shift + 点击`：导出选中图层为 PNG 并压缩（AE/PS 均支持）
+- `Alt + 点击`：压缩 AE 项目中选中的图片素材文件（仅 AE）
 - 所有压缩操作均会询问：直接替换原图 or 添加 `_tiny` 后缀保存副本
 
 ### 3.3 便捷选择
@@ -61,7 +62,7 @@ Auto_Tinify 是一款专为 Adobe After Effects 设计的图片压缩工具脚�
 ## 4. 技术栈概述
 
 ### 4.1 核心技术
-- **ExtendScript**：Adobe 官方脚本语言，兼容 After Effects CC 2020+
+- **ExtendScript**：Adobe 官方脚本语言，兼容 After Effects / Photoshop CC 2020+
 - **ScriptUI**：Adobe 脚本 UI 框架，创建原生风格的界面
 - **Tinify REST API**：图片压缩服务接口
 - **JSON**：配置文件存储格式
@@ -108,6 +109,7 @@ Auto_Tinify/
 ### 5.1 系统要求
 - **操作系统**：Windows 10/11 或 macOS 10.14+
 - **After Effects**：CC 2020 (版本 17.0) 或更高版本
+- **Photoshop**：CC 2020 (版本 21.0) 或更高版本
 - **网络连接**：需要访问 Tinify API（api.tinify.com）
 
 ### 5.2 文件格式支持

@@ -125,54 +125,36 @@ function updateKeyStatistics(apiKey, success) {
 
 ## 3. 快捷操作
 
-### 3.1 快捷键设计
+### 3.1 快捷键映射
+| 快捷键 | AE | PS |
+|--------|----|----|
+| 点击 | 压缩文件夹 | 压缩文件夹 |
+| Ctrl+Shift | 导出选中图层为 PNG 并压缩 | 导出选中图层为 PNG 并压缩 |
+| Alt | 压缩项目中选中的图片素材 | — |
+
+### 3.2 快捷键检测
 ```javascript
-// 注册快捷键
-function registerKeyboardShortcuts() {
-    // Ctrl+Shift + 点击：压缩 AE 选中的图片
-    var modifierMask = ScriptUI.environment.keyboardState.ctrlKey && 
-                      ScriptUI.environment.keyboardState.shiftKey;
-    
-    return {
-        compressSelected: modifierMask
-    };
+// 检测按键组合
+var ks = ScriptUI.environment.keyboardState;
+var ctrlShift = (ks.ctrlKey || ks.metaKey) && ks.shiftKey;
+var alt = ks.altKey;
+
+if (ctrlShift) {
+    // 导出选中图层并压缩
+} else if (alt && !isPhotoshop) {
+    // AE: 压缩选中的图片素材
 }
 ```
 
-### 3.2 快捷操作实现
-```javascript
-// 根据快捷键执行不同操作
-function handleQuickAction(files, modifiers) {
-    if (modifiers.compressSelected) {
-        // 压缩 AE 选中的文件
-        return compressSelectedFiles(files);
-    } else {
-        // 默认操作：压缩配置路径下的文件夹
-        return compressConfigFolder();
-    }
-}
-```
+### 3.3 按钮文本动态切换
+按钮文本随按下的快捷键实时切换：
+- 默认：`开始压缩`
+- Ctrl+Shift：`导出图层并压缩`
+- Alt（仅AE）：`压缩选中素材`
 
-### 3.3 操作反馈
 ```javascript
-// 提供视觉反馈
-function showActionFeedback(action) {
-    var feedbackText = "";
-    var feedbackColor = "";
-    
-    switch(action) {
-        case "compress_selected":
-            feedbackText = "压缩选中文件";
-            feedbackColor = COLORS.accent;
-            break;
-        default:
-            feedbackText = "压缩文件夹";
-            feedbackColor = COLORS.success;
-    }
-    
-    // 显示临时反馈
-    showTemporaryMessage(feedbackText, feedbackColor);
-}
+win.addEventListener("keydown", updateButtonText);
+win.addEventListener("keyup", updateButtonText);
 ```
 
 ## 4. 路径配置与变量支持
@@ -206,11 +188,23 @@ class PathResolver {
     }
     
     getProjectPath() {
-        var project = app.project;
-        if (project && project.file) {
-            return project.file.parent.fsName;
+        // AE: app.project.file.parent.fsName
+        // PS: app.activeDocument.path.fsName
+        if (app.name === "Adobe Photoshop") {
+            try {
+                if (app.documents.length > 0 && app.activeDocument) {
+                    return app.activeDocument.path.fsName;
+                }
+            } catch (e) {
+                return null;
+            }
+        } else {
+            var project = app.project;
+            if (project && project.file) {
+                return project.file.parent.fsName;
+            }
         }
-        return Folder.myDocuments.fsName;
+        return null;
     }
 }
 ```
@@ -666,15 +660,15 @@ function resumeCompression(files, startIndex) {
 **功能特点总结**：
 1. **高质量压缩**：保持视觉质量的同时最大化文件压缩
 2. **智能管理**：多API密钥自动轮换，避免使用限制
-3. **便捷操作**：Ctrl+Shift快捷键压缩选中文件
-4. **灵活配置**：支持变量路径和正则表达式匹配
-5. **实时反馈**：清晰的进度指示和状态显示
-6. **完整日志**：详细的处理记录，便于问题排查
-7. **持久配置**：自动保存用户设置，下次启动恢复
-8. **项目集成**：直接操作AE项目中的图片资源
-9. **便捷选择**：通过对话框快速选择文件/文件夹进行压缩
-10. **压缩对比**：压缩前预先保存文件大小，完成后准确显示对比数据
-11. **统一交互**：所有压缩入口统一询问"替换原图"或"添加后缀保存副本"，无Alt键快捷键
+3. **便捷操作**：Ctrl+Shift 导出图层并压缩，Alt 压缩素材
+4. **双平台支持**：AE 和 Photoshop 均可使用
+5. **灵活配置**：支持变量路径和正则表达式匹配
+6. **实时反馈**：清晰的进度指示和状态显示
+7. **完整日志**：详细的处理记录，便于问题排查
+8. **持久配置**：自动保存用户设置，下次启动恢复
+9. **项目集成**：直接操作 AE/PS 项目中的图片资源
+10. **便捷选择**：通过对话框快速选择文件/文件夹进行压缩
+11. **压缩对比**：压缩前预先保存文件大小，完成后准确显示对比数据
 
-**文档版本**：1.1  
-**最后更新**：2026-04-21
+**文档版本**：2.0  
+**最后更新**：2026-04-28
