@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="format-detection" content="telephone=no">
-    <title>快点鸭Auto_Tinify - After Effects 智能图片压缩工具</title>
+    <title>快点鸭Auto_Tinify - AE/PS 智能图片压缩工具</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="assets/logo.png">
@@ -596,7 +596,7 @@
                 <div class="text-center lg:text-left">
                     <div class="inline-flex items-center px-4 py-2 rounded-full glass text-sm text-brand-300 mb-8 animate-slide-down">
                         <span class="w-2 h-2 bg-brand-400 rounded-full mr-2 animate-pulse"></span>
-                        After Effects 专用压缩工具
+                        After Effects / Photoshop 双平台支持
                     </div>
                     
                     <h1 class="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight mb-6">
@@ -606,7 +606,7 @@
                     </h1>
                     
                     <p class="text-lg md:text-xl text-gray-400 mb-10 max-w-xl mx-auto lg:mx-0">
-                        专为 After Effects 设计的智能压缩工具。一键操作，多密钥轮换，让您的项目轻装上阵。
+                        支持 After Effects 和 Photoshop 的智能压缩工具。一键操作，多密钥轮换，图层导出压缩，让您的项目轻装上阵。
                     </p>
                     
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -633,7 +633,7 @@
                     <!-- Stats -->
                     <div class="flex flex-wrap justify-center lg:justify-start gap-8 mt-12 pt-8 border-t border-white/10">
                         <div class="text-center">
-                            <div class="text-3xl font-bold text-gradient">v2.0.5</div>
+                            <div class="text-3xl font-bold text-gradient">v2.0.6</div>
                             <div class="text-gray-500 text-sm mt-1">最新版本</div>
                         </div>
                         <div class="text-center">
@@ -739,8 +739,8 @@
                     <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                         <i class="fa fa-bolt text-2xl text-white"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-2">统一交互</h3>
-                    <p class="text-gray-400">压缩时询问替换或后缀保存，Ctrl+Shift 点击压缩选中文件</p>
+                    <h3 class="text-lg font-bold text-white mb-2">图层导出压缩</h3>
+                    <p class="text-gray-400">Ctrl+Shift 导出选中图层为 PNG 并压缩，Alt 压缩项目素材（AE）</p>
                 </div>
                 
                 <div class="group glass rounded-2xl p-4 hover:bg-white/10 transition-all duration-500 card-3d" data-aos="fade-up" data-aos-delay="400">
@@ -779,8 +779,8 @@
                     <div class="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                         <i class="fa fa-puzzle-piece text-2xl text-white"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-2">项目集成</h3>
-                    <p class="text-gray-400">直接在 AE 项目中选择图片进行压缩，无需复制</p>
+                    <h3 class="text-lg font-bold text-white mb-2">双平台支持</h3>
+                    <p class="text-gray-400">同一份脚本支持 AE 和 PS，环境自适应，功能无缝切换</p>
                 </div>
             </div>
         </div>
@@ -822,8 +822,8 @@
                                     <i class="fa fa-check text-brand-400 mr-2"></i>
                                     <span>方法 1：手动安装</span>
                                 </div>
-                                <div class="ml-6 text-xs">
-                                    下载 .jsxbin 文件 → 复制到 AE 脚本目录 → 重启 AE
+                                    <div class="ml-6 text-xs">
+                                    下载 .jsxbin 文件 → 复制到 AE/PS 脚本目录 → 重启软件
                                 </div>
                             </div>
                             <div>
@@ -882,7 +882,7 @@
                             3
                         </div>
                         <h3 class="text-2xl font-bold text-white mb-4">开始压缩</h3>
-                        <p class="text-gray-400 mb-6">点击"开始压缩"按钮，或使用 Ctrl+Shift 点击批量压缩选中文件。</p>
+                        <p class="text-gray-400 mb-6">点击"开始压缩"按钮，或使用 Ctrl+Shift 导出选中图层进行压缩，Alt 压缩素材文件。</p>
                         <div class="space-y-2 text-sm text-gray-400">
                             <div class="flex items-center">
                                 <i class="fa fa-check text-green-400 mr-2"></i>
@@ -890,7 +890,11 @@
                             </div>
                             <div class="flex items-center">
                                 <i class="fa fa-check text-green-400 mr-2"></i>
-                                <span>Ctrl+Shift 点击选中图片进行压缩</span>
+                                <span>Ctrl+Shift 导出选中图层并压缩</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fa fa-check text-green-400 mr-2"></i>
+                                <span>Alt 压缩选中的素材文件（AE）</span>
                             </div>
                             <div class="flex items-center">
                                 <i class="fa fa-check text-green-400 mr-2"></i>
@@ -1053,11 +1057,11 @@
                 <h2 class="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-8">
                     <span class="text-white">准备好优化您的</span>
                     <br>
-                    <span class="text-gradient">After Effects 项目了吗？</span>
+                    <span class="text-gradient">AE/PS 项目了吗？</span>
                 </h2>
                 
                 <p class="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
-                    免费下载快点鸭Auto_Tinify v2.0.5，开始体验智能图片压缩的便利。让您的项目轻装上阵，性能提升。
+                    免费下载快点鸭Auto_Tinify v2.0.6，开始体验 AE/PS 智能图片压缩的便利。让您的项目轻装上阵，性能提升。
                 </p>
                 
                 <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
