@@ -259,6 +259,8 @@ var logContent = ""; // 日志内容（全局变量，必须在函数声明前�
 var apiKeySettingsWindow = null;
 var pathSettingsWindow = null;
 var logWindow = null;
+var psExportFolderName = "images"; // PS 图层导出目录名（相对于文档目录）
+var psSelectedLayerNames = []; // PS 选中图层名称缓存（用于悬浮提示）
 
 // 跨平台打开URL函数
 function urlOpen(url) {
@@ -302,6 +304,42 @@ buttonRow1.spacing = 15;
 var uploadButton = buttonRow1.add("button", undefined, "开始压缩");
 uploadButton.preferredSize.width = 315;
 uploadButton.helpTip = "点击：压缩并询问是否替换原图\n按住 Ctrl+Shift 键点击：AE-压缩选中素材 / PS-导出选中图层并压缩";
+
+// PS 导出目录输入行
+var exportRow = mainPanel.add("group");
+exportRow.orientation = "row";
+exportRow.alignChildren = ["fill", "center"];
+exportRow.spacing = 8;
+var exportLabel = exportRow.add("statictext", undefined, "导出目录:");
+exportLabel.preferredSize.width = 55;
+var exportFolderInput = exportRow.add("edittext", undefined, psExportFolderName);
+exportFolderInput.preferredSize.width = 220;
+exportFolderInput.helpTip = "PS 图层导出目录（相对于文档所在目录）";
+exportFolderInput.onChange = function() {
+    psExportFolderName = exportFolderInput.text.replace(/[\/\\]+$/, "") || "images";
+    exportFolderInput.text = psExportFolderName;
+};
+
+// 点击"导出目录"标签 → 读取选中图层
+exportLabel.addEventListener("click", function() {
+    if (!isPhotoshop) return;
+    updateExportTooltip();
+    if (psSelectedLayerNames.length > 0) {
+        var msg = "检测到 " + psSelectedLayerNames.length + " 个选中图层：\n";
+        for (var i = 0; i < psSelectedLayerNames.length; i++) {
+            msg += "  " + psSelectedLayerNames[i] + "\n";
+        }
+        addLog(msg.trim());
+        alert(msg);
+    } else {
+        addLog("未检测到选中图层");
+        alert("未检测到选中图层！\n请先在图层面板中选中要导出的图层。");
+    }
+});
+exportLabel.helpTip = "点击读取当前选中图层";
+
+// PS 才显示导出目录行
+exportRow.visible = isPhotoshop;
 
 // 第二行按钮
 var buttonRow2 = mainPanel.add("group");
@@ -1428,7 +1466,95 @@ function compressSelectedFiles(files, replaceOriginal) {
 
 // ======================== PS 图层导出压缩 ========================
 
-// PS: 导出选中图层为 PNG 到文档旁边 images 目录，然后压缩替换
+// PS: 获取所有选中图层对象列表
+function getPSSelectedLayers() {
+    var selected = [];
+    try {
+        if (app.documents.length === 0) return selected;
+        var doc = app.activeDocument;
+
+        // 通过 targetLayers 获取选中图层
+        try {
+            var ref = new ActionReference();
+            ref.putProperty(charIDToTypeID("Prpr"), stringIDToTypeID("targetLayers"));
+            ref.putEnumerated(charIDToTypeID("Dcmn"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+            var desc = executeActionGet(ref);
+            if (desc.hasKey(stringIDToTypeID("targetLayers"))) {
+                var list = desc.getList(stringIDToTypeID("targetLayers"));
+                addLog("  DEBUG targetLayers count: " + list.count);
+                for (var i = 0; i < list.count; i++) {
+                    try {
+                        var layerRef = list.getReference(i);
+                        var layerDesc = executeActionGet(layerRef);
+                        var layerID = layerDesc.getInteger(stringIDToTypeID("layerID"));
+                        var layerName = layerDesc.getString(stringIDToTypeID("name"));
+                        addLog("  DEBUG layer[" + i + "]: name=" + layerName + " id=" + layerID);
+                        selected.push({id: layerID, name: layerName});
+                    } catch (e2) {
+                        addLog("  DEBUG layer[" + i + "] getinfo error: " + e2.toString());
+                    }
+                }
+            }
+        } catch (e) {
+            addLog("  DEBUG targetLayers error: " + e.toString());
+        }
+
+        // 如果 targetLayers 获取到了信息，用 ID 匹配文档中的图层对象
+        if (selected.length > 0) {
+            var layerMap = {};
+            function collectAll(layers) {
+                for (var i = 0; i < layers.length; i++) {
+                    layerMap[layers[i].id] = layers[i];
+                    if (layers[i].typename === "LayerSet") collectAll(layers[i].layers);
+                }
+            }
+            collectAll(doc.layers);
+            var result = [];
+            for (var j = 0; j < selected.length; j++) {
+                if (layerMap[selected[j].id]) {
+                    result.push(layerMap[selected[j].id]);
+                }
+            }
+            if (result.length > 0) return result;
+        }
+    } catch (e) {
+        addLog("  DEBUG getPSSelectedLayers error: " + e.toString());
+    }
+
+    // 回退到 activeLayer
+    if (app.activeDocument && app.activeDocument.activeLayer) {
+        selected = [app.activeDocument.activeLayer];
+    }
+    return selected;
+}
+
+// PS: 获取选中图层名称列表（用于悬浮提示）
+function getSelectedLayerNames() {
+    var names = [];
+    var layers = getPSSelectedLayers();
+    for (var i = 0; i < layers.length; i++) {
+        names.push(layers[i].name);
+    }
+    return names;
+}
+
+// 更新 PS 导出目录悬浮提示
+function updateExportTooltip() {
+    if (!isPhotoshop) return;
+    psSelectedLayerNames = getSelectedLayerNames();
+    var tip = "导出目录: " + psExportFolderName + "\n";
+    if (psSelectedLayerNames.length > 0) {
+        tip += "待导出图层 (" + psSelectedLayerNames.length + " 个):\n";
+        for (var i = 0; i < psSelectedLayerNames.length; i++) {
+            tip += "  " + psSelectedLayerNames[i] + "\n";
+        }
+    } else {
+        tip += "（未选中图层）";
+    }
+    exportFolderInput.helpTip = tip;
+}
+
+// PS: 导出选中图层为 PNG 到文档旁边指定目录，然后压缩替换
 function exportAndCompressPSSelectedLayers() {
     // 检查文档是否打开且已保存
     try {
@@ -1444,62 +1570,34 @@ function exportAndCompressPSSelectedLayers() {
     }
 
     var origDoc = app.activeDocument;
-    var imagesFolder = new Folder(docPath.fsName + "/images");
+    var imagesFolder = new Folder(docPath.fsName + "/" + psExportFolderName);
     if (!imagesFolder.exists) {
         imagesFolder.create();
     }
 
-    // 获取选中图层 ID（ActionManager 方式，支持多选）
-    var selectedLayerIDs = [];
-    try {
-        var ref = new ActionReference();
-        ref.putProperty(charIDToTypeID("Prpr"), stringIDToTypeID("targetLayers"));
-        ref.putEnumerated(charIDToTypeID("Dcmn"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
-        var desc = executeActionGet(ref);
-        if (desc.hasKey(stringIDToTypeID("targetLayers"))) {
-            var list = desc.getList(stringIDToTypeID("targetLayers"));
-            for (var i = 0; i < list.count; i++) {
-                selectedLayerIDs.push(list.getReference(i).getIdentifier(charIDToTypeID("Lyr ")));
-            }
-        }
-    } catch (e) {}
+    // 获取选中图层列表
+    var selectedLayers = getPSSelectedLayers();
 
-    if (selectedLayerIDs.length === 0 && origDoc.activeLayer) {
-        selectedLayerIDs.push(origDoc.activeLayer.id);
-    }
-
-    if (selectedLayerIDs.length === 0) {
+    if (selectedLayers.length === 0) {
         alert("请先选中要导出的图层或组！");
         addLog("错误：未选中任何图层");
         return;
     }
 
-    // 建立 ID → 图层对象映射
-    var layerMap = {};
-    function collectLayers(container) {
-        for (var i = 0; i < container.layers.length; i++) {
-            var lyr = container.layers[i];
-            layerMap[lyr.id] = lyr;
-            if (lyr.typename === "LayerSet") collectLayers(lyr);
-        }
-    }
-    collectLayers(origDoc);
-
-    addLog("PS 导出选中图层：共 " + selectedLayerIDs.length + " 个");
+    addLog("PS 导出选中图层：共 " + selectedLayers.length + " 个");
     addLog("导出目录：" + imagesFolder.fsName);
 
     // 逐个导出为 PNG
     var exportedFiles = [];
-    for (var j = 0; j < selectedLayerIDs.length; j++) {
-        var lyrID = selectedLayerIDs[j];
-        var obj = layerMap[lyrID];
+    for (var j = 0; j < selectedLayers.length; j++) {
+        var obj = selectedLayers[j];
         if (!obj) continue;
 
         var objName = obj.name;
         var cleanName = objName.replace(/[\/\\:*?"<>|]/g, "_");
         var pngFile = new File(imagesFolder.fsName + "/" + cleanName + ".png");
 
-        addLog("[" + (j + 1) + "/" + selectedLayerIDs.length + "] 导出图层: " + objName);
+        addLog("[" + (j + 1) + "/" + selectedLayers.length + "] 导出图层: " + objName);
 
         // 选中并复制
         origDoc.activeLayer = obj;
@@ -1633,7 +1731,7 @@ uploadButton.onClick = function() {
     // Ctrl+Shift 点击：AE 压缩选中素材 / PS 导出选中图层并压缩
     if (ctrlPressed && shiftPressed) {
         if (isPhotoshop) {
-            // PS: 导出选中图层为 PNG 到文档旁边 images 目录，然后压缩替换
+            // PS: 导出选中图层为 PNG 并压缩
             exportAndCompressPSSelectedLayers();
             return;
         }

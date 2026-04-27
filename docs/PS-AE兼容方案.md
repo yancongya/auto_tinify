@@ -95,14 +95,42 @@ AE 和 PS 中 Ctrl+Shift 点击"开始压缩"的行为不同：
 ### PS 图层导出压缩流程
 
 1. 检查文档是否已保存（未保存则提示并退出）
-2. 在文档旁边创建 `images` 目录
-3. 通过 ActionManager 获取所有选中图层/组的 ID
+2. 在文档旁边创建导出目录（默认 `images`，可通过输入框修改）
+3. 通过 ActionManager `targetLayers` 获取所有选中图层
 4. 逐个图层处理：
    - 选中 → 复制 → 新建透明文档（按图层边界尺寸）
-   - 粘贴 → 导出为 PNG 到 `images` 目录
+   - 粘贴 → 导出为 PNG 到导出目录
    - 关闭临时文档（不保存）
 5. 对所有导出的 PNG 进行 Tinify 压缩
 6. 用压缩后的文件替换导出文件
+
+### PS 图层多选检测
+
+PS 的 ExtendScript 不支持直接获取 Ctrl 多选图层的 ID（`getIdentifier` 报错）。解决方案：
+
+1. 通过 `targetLayers` ActionReference 获取选中数量
+2. 对列表中每个引用调用 `executeActionGet(layerRef)` 获取图层描述符
+3. 从描述符中提取 `layerID` 和 `name`
+4. 用 ID 匹配文档中实际的图层对象
+
+```javascript
+var list = desc.getList(stringIDToTypeID("targetLayers"));
+for (var i = 0; i < list.count; i++) {
+    var layerRef = list.getReference(i);
+    var layerDesc = executeActionGet(layerRef);
+    var layerID = layerDesc.getInteger(stringIDToTypeID("layerID"));
+    var layerName = layerDesc.getString(stringIDToTypeID("name"));
+}
+```
+
+> **踩坑记录**：`getReference(i).getIdentifier(charIDToTypeID("Lyr "))` 在部分 PS 版本中报"常规 Photoshop 错误"，改用 `executeActionGet` 可绕过。
+
+### PS 导出目录输入框
+
+在面板中"开始压缩"按钮下方增加导出目录输入行（仅 PS 显示）：
+- 默认值 `images`，修改后自动保存
+- 点击 **"导出目录:"** 标签 → 读取当前选中图层，弹窗显示列表并写入日志
+- 悬浮提示显示待导出图层名称
 
 > 参考脚本：`source/reference/导出选中图层为PSD.jsx`，简化为直接导出 PNG 而非先存 PSD。
 
@@ -189,10 +217,15 @@ function callSystem(cmd) {
 | 顶部 | 新增 `String.prototype.trim` polyfill |
 | 顶部 | 新增 `Array.prototype.indexOf` polyfill |
 | 顶部 | 新增 `callSystem()` 兼容包装函数 |
+| 全局变量 | 新增 `psExportFolderName`（导出目录名）和 `psSelectedLayerNames`（选中图层缓存） |
 | 副标题 | `"After Effects 图片压缩工具"` → `"支持AE/PS"` |
 | `resolvePathPattern` | PS 用 `app.activeDocument.path`，AE 用 `app.project.file` |
 | `getSelectedImageFiles` | PS 入口直接返回空数组 |
+| `getPSSelectedLayers` | **新增** PS 多选图层检测（targetLayers + executeActionGet） |
+| `getSelectedLayerNames` | **新增** PS 选中图层名称列表 |
+| `updateExportTooltip` | **新增** 更新导出目录悬浮提示 |
 | `exportAndCompressPSSelectedLayers` | **新增** PS 图层导出压缩函数 |
+| UI | 新增 PS 导出目录输入行，点击标签读取选中图层 |
 | `uploadButton.onClick` | Ctrl+Shift：AE 压缩素材 / PS 导出图层并压缩 |
 | `urlOpen` | `system.callSystem` → `callSystem` |
 | `getApiKeyUsageCount` | `system.callSystem` → `callSystem` |
@@ -205,12 +238,28 @@ function callSystem(cmd) {
 
 ---
 
-## 八、测试要点
+## 八、踩坑记录
+
+| 问题 | 表现 | 解决方案 |
+|------|------|---------|
+| PS palette 不常驻 | 脚本结束后窗口销毁 | PS 改用 `"dialog"` 模态窗口 |
+| `String.trim` 不可用 | `read().trim()` 报错 | 添加 ES3 polyfill |
+| `Array.indexOf` 不可用 | `[].indexOf(ext)` 报错 | 添加 ES3 polyfill |
+| `system.callSystem` 不存在 | curl 命令执行报错 | PS 改用 `app.system()` |
+| `getIdentifier` 报错 | PS 多选图层只识别一个 | 改用 `executeActionGet(layerRef)` 提取信息 |
+| dialog 标题被覆盖 | PS 标题栏显示宿主版本 | PS 固有行为，无法改变 |
+
+---
+
+## 九、测试要点
 
 | 测试项 | AE | PS |
 |--------|----|----|
 | 窗口打开 | palette 常驻 | dialog 模态 |
 | 窗口标题 | 正常显示版本 | PS 追加宿主版本（固有行为） |
+| 导出目录输入框 | 不显示 | 显示，默认 `images`，可修改 |
+| 点击"导出目录:"标签 | — | 读取选中图层，弹窗+日志 |
+| 图层多选识别 | — | `executeActionGet` 提取 layerID + name |
 | 未保存时 `${projectPath}` | 显示 "未保存项目" | 显示 "未保存项目" |
 | 已保存时 `${projectPath}` | 项目文件所在目录 | 文档所在目录 |
 | Ctrl+Shift | 压缩选中素材文件 | 导出选中图层为 PNG 并压缩 |
