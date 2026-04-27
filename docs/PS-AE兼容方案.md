@@ -124,9 +124,9 @@ if (ctrlPressed && shiftPressed) {
 
 ## 五、ExtendScript (ES3) 兼容问题
 
-PS 和 AE 的 ExtendScript 均基于 ES3，但部分实现有差异。
+PS 和 AE 的 ExtendScript 均基于 ES3，但部分实现有差异。PS 缺失的 ES5 方法比 AE 更多，需要逐一添加 polyfill。
 
-### `String.prototype.trim` 缺失
+### 1. `String.prototype.trim` 缺失
 
 PS 部分版本的 ExtendScript 不包含 `trim()` 方法，需添加 polyfill：
 
@@ -140,18 +140,63 @@ if (typeof String.prototype.trim !== 'function') {
 
 > 影响位置：`loadPathPatterns()`、`loadApiKeys()` 中的 `.trim()` 调用。
 
+### 2. `Array.prototype.indexOf` 缺失
+
+PS 的 ExtendScript 不包含 `indexOf()` 方法，调用 `["jpg","png"].indexOf(ext)` 会报错。
+
+```javascript
+if (typeof Array.prototype.indexOf !== 'function') {
+    Array.prototype.indexOf = function(searchElement) {
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] === searchElement) return i;
+        }
+        return -1;
+    };
+}
+```
+
+> 影响位置：`compressFolder()`、`compressFolderWithSuffix()`、`getSelectedImageFiles()` 等文件扩展名判断。
+
 ---
 
-## 六、修改清单总览
+## 六、系统命令执行差异
+
+| 宿主 | 执行 shell 命令 |
+|------|----------------|
+| AE   | `system.callSystem(cmd)` |
+| PS   | `app.system(cmd)` |
+
+需封装统一函数：
+
+```javascript
+function callSystem(cmd) {
+    if (isPhotoshop) {
+        return app.system(cmd);
+    } else {
+        return system.callSystem(cmd);
+    }
+}
+```
+
+> 影响位置：`compressImage()` 中的 curl 上传/下载命令、`urlOpen()` 中的打开链接命令、`getApiKeyUsageCount()` 中的 API 查询命令。
+
+---
+
+## 七、修改清单总览
 
 | 文件位置 | 修改内容 |
 |---------|---------|
 | 顶部 | 新增 `isPhotoshop` / `isAfterEffects` 环境检测变量 |
 | 顶部 | 新增 `String.prototype.trim` polyfill |
+| 顶部 | 新增 `Array.prototype.indexOf` polyfill |
+| 顶部 | 新增 `callSystem()` 兼容包装函数 |
 | 副标题 | `"After Effects 图片压缩工具"` → `"支持AE/PS"` |
 | `resolvePathPattern` | PS 用 `app.activeDocument.path`，AE 用 `app.project.file` |
 | `getSelectedImageFiles` | PS 入口直接返回空数组 |
 | `uploadButton.onClick` | Ctrl+Shift 检测到 PS 时弹窗提示并 return |
+| `urlOpen` | `system.callSystem` → `callSystem` |
+| `getApiKeyUsageCount` | `system.callSystem` → `callSystem` |
+| `compressImage` | `system.callSystem` → `callSystem` |
 | `win` 创建 | PS 用 `"dialog"`，AE 用 `"palette"` |
 | 未保存提示 | PS/PS 分别显示不同文案 |
 | 启动日志 | 输出当前运行环境 |
@@ -159,7 +204,7 @@ if (typeof String.prototype.trim !== 'function') {
 
 ---
 
-## 七、测试要点
+## 八、测试要点
 
 | 测试项 | AE | PS |
 |--------|----|----|
@@ -169,6 +214,9 @@ if (typeof String.prototype.trim !== 'function') {
 | Ctrl+Shift 压缩选中文件 | 正常工作 | 弹窗提示不支持 |
 | 选择文件压缩 | 正常工作 | 正常工作 |
 | 选择文件夹压缩 | 正常工作 | 正常工作 |
+| curl 命令执行 | `system.callSystem` | `app.system` |
+| 打开外部链接 | 正常工作 | 正常工作 |
 | API Key 管理 | 正常工作 | 正常工作 |
 | 路径设置 | 正常工作 | 正常工作 |
-| `String.trim` | 正常工作 | 正常工作 |
+| `String.trim` | 正常工作 | polyfill |
+| `Array.indexOf` | 正常工作 | polyfill |

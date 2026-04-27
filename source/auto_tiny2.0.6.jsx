@@ -1,5 +1,5 @@
-// 设置版本的变量
-var version = "2.0.5";
+﻿// 设置版本的变量
+var version = "2.0.6";
 
 // ======================== 环境检测 ========================
 var isPhotoshop = (app.name === "Adobe Photoshop");
@@ -10,6 +10,23 @@ if (typeof String.prototype.trim !== 'function') {
     String.prototype.trim = function() {
         return this.replace(/^\s+|\s+$/g, '');
     };
+}
+if (typeof Array.prototype.indexOf !== 'function') {
+    Array.prototype.indexOf = function(searchElement) {
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] === searchElement) return i;
+        }
+        return -1;
+    };
+}
+
+// 兼容 system.callSystem (AE) 和 app.system (PS)
+function callSystem(cmd) {
+    if (isPhotoshop) {
+        return app.system(cmd);
+    } else {
+        return system.callSystem(cmd);
+    }
 }
 
 // ======================== 脚本UI配置 ========================
@@ -247,10 +264,10 @@ var logWindow = null;
 function urlOpen(url) {
     if ($.os.indexOf("Windows") != -1) {
         // Windows系统
-        system.callSystem("cmd.exe /c start \"\" \"" + url + "\"");
+        callSystem("cmd.exe /c start \"\" \"" + url + "\"");
     } else {
         // MAC系统
-        system.callSystem("open \"" + url + "\"");
+        callSystem("open \"" + url + "\"");
     }
 }
 
@@ -346,7 +363,7 @@ function getApiKeyUsageCount(apiKey) {
                  ' --data-binary "" ' +
                  ' https://api.tinify.com/shrink';
 
-        var result = system.callSystem(cmd);
+        var result = callSystem(cmd);
 
         addLog("API 响应: " + result);
 
@@ -1059,8 +1076,10 @@ function compressImage(apiKey, inputFile, outputFile, keyIndex) {
                     ' --data-binary @"' + tempInputFile.fsName + '" ' +
                     ' https://api.tinify.com/shrink';
 
+    addLog("  DEBUG: 执行 curl 上传...");
     try {
-        var uploadResult = system.callSystem(uploadCmd);
+        var uploadResult = callSystem(uploadCmd);
+        addLog("  DEBUG: curl 上传完成");
 
         var headers = "";
         var location = "";
@@ -1100,7 +1119,7 @@ function compressImage(apiKey, inputFile, outputFile, keyIndex) {
                          ' -o "' + tempDownloadFile.fsName + '" ' +
                          ' "' + location + '"';
 
-        var downloadResult = system.callSystem(downloadCmd);
+        var downloadResult = callSystem(downloadCmd);
 
         var success = false;
 
@@ -1149,11 +1168,13 @@ function formatFileSize(bytes) {
 
 // 递归压缩文件夹内的图片
 function compressFolder(sourceFolder, outputFolder, apiKey) {
+    addLog("  compressFolder: " + sourceFolder.fsName);
     if (!outputFolder.exists) {
         outputFolder.create();
     }
 
     var files = sourceFolder.getFiles();
+    addLog("  找到 " + files.length + " 个文件/文件夹");
     var successCount = 0;
     var failCount = 0;
     var totalSize = 0;
@@ -1550,9 +1571,13 @@ uploadButton.onClick = function() {
     
     var result;
     if (replaceOriginal) {
+        addLog("DEBUG: 即将调用 compressFolder, sourceFolder=" + sourceFolder.fsName);
         result = compressFolder(sourceFolder, sourceFolder, getCurrentApiKey());
+        addLog("DEBUG: compressFolder 返回");
     } else {
+        addLog("DEBUG: 即将调用 compressFolderWithSuffix");
         result = compressFolderWithSuffix(sourceFolder, "_tiny", getCurrentApiKey());
+        addLog("DEBUG: compressFolderWithSuffix 返回");
     }
 
     addLog("\n========== 压缩完成 ==========");
