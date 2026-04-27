@@ -1,0 +1,12 @@
+# 参考脚本（第三方扩展，不纳入版本管理）
+source/reference/
+
+# 配置文件
+source/auto_tinify_config.txt
+
+# IDE
+.vscode/
+
+# 系统文件
+Thumbs.db
+.DS_Store

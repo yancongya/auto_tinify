@@ -1,19 +1,20 @@
 ﻿# <img src="assets/logo.png" width="32"> Auto_Tinify
 
-![Version](https://img.shields.io/badge/version-2.0.5-blue)
+![Version](https://img.shields.io/badge/version-2.0.6-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![After Effects](https://img.shields.io/badge/After%20Effects-2020%2B-orange)
+![Photoshop](https://img.shields.io/badge/Photoshop-2020%2B-orange)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Mac-lightgrey)
 
 ![Cover](assets/cover.png)
 
-> 主打简单快捷的 After Effects 图片压缩工具
+> 主打简单快捷的 AE/PS 图片压缩工具
 
 ---
 
 ## 介绍
 
-Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 Tinify API 提供高效、智能的图片压缩服务。支持批量压缩、多 API Key 轮换、自定义路径配置等强大功能，帮助您轻松优化项目中的图片资源。
+Auto_Tinify 是一款支持 After Effects 和 Photoshop 的图片压缩工具，通过 Tinify API 提供高效、智能的图片压缩服务。支持批量压缩、多 API Key 轮换、自定义路径配置、图层导出压缩等强大功能，帮助您轻松优化项目中的图片资源。
 
 ## 产品官网
 
@@ -25,7 +26,8 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 - 🔑 **多密钥支持**：支持多个 API Key 轮换，自动追踪剩余次数
 - 🎯 **灵活路径**：支持路径配置，使用 `${projectPath}` 变量
 - ⚡ **快捷操作**：
-  - `Ctrl+Shift` 点击：压缩选中的图片文件
+  - `Ctrl+Shift` 点击：导出选中图层为 PNG 并压缩（AE/PS）
+  - `Alt` 点击：压缩选中的图片素材文件（仅 AE）
 - 📁 **选择文件/文件夹**：快速选择目标进行压缩，支持替换原图或添加后缀保存副本
 - 📊 **实时监控**：显示剩余使用次数和当前路径
 - 📝 **日志记录**：完整的操作日志记录
@@ -41,10 +43,14 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 
 1. 下载 `public` 文件夹中的最新版本 `.jsxbin` 文件
    - 网盘下载：[123网盘下载](https://www.123865.com/s/FQvajv-z4EnH?pwd=zIXS)
-2. 复制到 After Effects 脚本目录：
-   - **Windows**: `C:\Program Files\Adobe\Adobe After Effects [版本]\Support Files\Scripts\`
-   - **Mac**: `/Applications/Adobe After Effects [版本]/Scripts/`
-3. 重启 After Effects，在 `Window` 菜单中找到脚本
+2. 复制到脚本目录：
+   - **After Effects**：
+     - Windows: `C:\Program Files\Adobe\Adobe After Effects [版本]\Support Files\Scripts\`
+     - Mac: `/Applications/Adobe After Effects [版本]/Scripts/`
+   - **Photoshop**：
+     - Windows: `C:\Program Files\Adobe\Adobe Photoshop [版本]\Presets\Scripts\`
+     - Mac: `/Applications/Adobe Photoshop [版本]/Presets/Scripts/`
+3. 重启 AE/PS，在脚本菜单中找到脚本
 
 **方法 2：使用脚本面板**
 
@@ -86,7 +92,8 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 | 操作                     | 方法                  | 说明                     |
 | ------------------------ | --------------------- | ------------------------ |
 | 压缩配置路径下的文件夹   | 点击 `开始压缩`     | 询问替换原图或添加后缀保存副本 |
-| 压缩选中项目中的图片文件 | `Ctrl+Shift` + 点击 | 同样询问替换原图或添加后缀保存副本 |
+| 导出选中图层并压缩       | `Ctrl+Shift` + 点击 | AE/PS 均支持，导出图层为 PNG 并压缩 |
+| 压缩选中的图片素材       | `Alt` + 点击        | 仅 AE，压缩项目中的图片素材 |
 | 压缩指定文件             | 点击 `选择文件`     | 选择一个或多个图片文件进行压缩 |
 | 压缩指定文件夹           | 点击 `选择文件夹`   | 选择文件夹递归压缩内部图片 |
 | 查看日志                 | 点击 `📋` 按钮      | 查看详细操作记录         |
@@ -110,9 +117,10 @@ Auto_Tinify 是一款专为 After Effects 设计的图片压缩工具，通过 T
 ![主界面](assets/main.jpg)
 
 - **开始压缩**：独占第一行，点击后询问替换原图或添加后缀保存副本
-- **选择文件/文件夹**：第二行，快速选择目标进行压缩
-- **API Key 设置/路径设置**：第三行，配置面板
-- **日志/帮助**：第四行，辅助功能
+- **导出目录**：第二行，可修改图层导出目录名（默认 `images`），点击标签读取选中图层
+- **选择文件/文件夹**：第三行，快速选择目标进行压缩
+- **API Key 设置/路径设置**：第四行，配置面板
+- **日志/帮助**：第五行，辅助功能
 - **状态栏**：显示剩余次数和当前压缩路径
 - **压缩进度**：实时显示压缩进度
 
