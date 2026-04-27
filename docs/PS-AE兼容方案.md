@@ -83,7 +83,30 @@ function resolvePathPattern(pattern) {
 
 ---
 
-## 四、AE 专属 API 禁用清单
+## 四、Ctrl+Shift 功能差异
+
+AE 和 PS 中 Ctrl+Shift 点击"开始压缩"的行为不同：
+
+| 宿主 | 行为 | 说明 |
+|------|------|------|
+| AE | 压缩选中素材文件 | 从项目面板/合成中获取选中的图片素材 |
+| PS | 导出选中图层并压缩 | 逐个图层导出 PNG → Tinify 压缩替换 |
+
+### PS 图层导出压缩流程
+
+1. 检查文档是否已保存（未保存则提示并退出）
+2. 在文档旁边创建 `images` 目录
+3. 通过 ActionManager 获取所有选中图层/组的 ID
+4. 逐个图层处理：
+   - 选中 → 复制 → 新建透明文档（按图层边界尺寸）
+   - 粘贴 → 导出为 PNG 到 `images` 目录
+   - 关闭临时文档（不保存）
+5. 对所有导出的 PNG 进行 Tinify 压缩
+6. 用压缩后的文件替换导出文件
+
+> 参考脚本：`source/reference/导出选中图层为PSD.jsx`，简化为直接导出 PNG 而非先存 PSD。
+
+### AE 专属 API 禁用清单
 
 以下 API 在 PS 中不存在，需要在函数入口加守卫：
 
@@ -95,30 +118,6 @@ function resolvePathPattern(pattern) {
 | `FootageItem` | AE 素材类 | PS 无此类型 |
 | `CompItem` | AE 合成类 | PS 无此类型 |
 | `AVLayer` | AE 音视频图层 | PS 无此类型 |
-
-**禁用方式 — 函数入口守卫：**
-
-```javascript
-function getSelectedImageFiles() {
-    if (isPhotoshop) {
-        addLog("Photoshop 不支持获取选中图片文件功能");
-        return [];
-    }
-    // ... AE 逻辑
-}
-```
-
-**禁用方式 — 按钮事件守卫：**
-
-```javascript
-if (ctrlPressed && shiftPressed) {
-    if (isPhotoshop) {
-        alert("Photoshop 不支持此功能！");
-        return;
-    }
-    // ... AE 逻辑
-}
-```
 
 ---
 
@@ -193,14 +192,16 @@ function callSystem(cmd) {
 | 副标题 | `"After Effects 图片压缩工具"` → `"支持AE/PS"` |
 | `resolvePathPattern` | PS 用 `app.activeDocument.path`，AE 用 `app.project.file` |
 | `getSelectedImageFiles` | PS 入口直接返回空数组 |
-| `uploadButton.onClick` | Ctrl+Shift 检测到 PS 时弹窗提示并 return |
+| `exportAndCompressPSSelectedLayers` | **新增** PS 图层导出压缩函数 |
+| `uploadButton.onClick` | Ctrl+Shift：AE 压缩素材 / PS 导出图层并压缩 |
 | `urlOpen` | `system.callSystem` → `callSystem` |
 | `getApiKeyUsageCount` | `system.callSystem` → `callSystem` |
 | `compressImage` | `system.callSystem` → `callSystem` |
 | `win` 创建 | PS 用 `"dialog"`，AE 用 `"palette"` |
-| 未保存提示 | PS/PS 分别显示不同文案 |
+| 窗口标题 | 末尾添加 `[PS]` / `[AE]` 环境标识 |
+| 未保存提示 | PS/AE 分别显示不同文案 |
 | 启动日志 | 输出当前运行环境 |
-| 帮助文本 | 移除 "After Effects" 特定描述 |
+| 帮助文本 | 更新 Ctrl+Shift 功能描述（双平台） |
 
 ---
 
@@ -209,9 +210,10 @@ function callSystem(cmd) {
 | 测试项 | AE | PS |
 |--------|----|----|
 | 窗口打开 | palette 常驻 | dialog 模态 |
+| 窗口标题 | 正常显示版本 | PS 追加宿主版本（固有行为） |
 | 未保存时 `${projectPath}` | 显示 "未保存项目" | 显示 "未保存项目" |
 | 已保存时 `${projectPath}` | 项目文件所在目录 | 文档所在目录 |
-| Ctrl+Shift 压缩选中文件 | 正常工作 | 弹窗提示不支持 |
+| Ctrl+Shift | 压缩选中素材文件 | 导出选中图层为 PNG 并压缩 |
 | 选择文件压缩 | 正常工作 | 正常工作 |
 | 选择文件夹压缩 | 正常工作 | 正常工作 |
 | curl 命令执行 | `system.callSystem` | `app.system` |

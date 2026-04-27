@@ -279,7 +279,8 @@ if (PATH_PATTERNS.length > 0) {
 }
 
 // ======================== 创建主窗口 ========================
-var win = new Window(isPhotoshop ? "dialog" : "palette", MAIN_WINDOW_TITLE + " v " + version + " (Auto_Tinify)", undefined);
+var envTag = isPhotoshop ? "PS" : "AE";
+var win = new Window(isPhotoshop ? "dialog" : "palette", MAIN_WINDOW_TITLE + " v " + version + " (Auto_Tinify) [" + envTag + "]", undefined);
 win.orientation = "column";
 win.alignChildren = ["fill", "top"];
 win.spacing = 15;
@@ -300,7 +301,7 @@ buttonRow1.spacing = 15;
 
 var uploadButton = buttonRow1.add("button", undefined, "开始压缩");
 uploadButton.preferredSize.width = 315;
-uploadButton.helpTip = "点击：压缩并询问是否替换原图\n按住 Ctrl+Shift 键点击：压缩选中的图片文件（仅支持AE）";
+uploadButton.helpTip = "点击：压缩并询问是否替换原图\n按住 Ctrl+Shift 键点击：AE-压缩选中素材 / PS-导出选中图层并压缩";
 
 // 第二行按钮
 var buttonRow2 = mainPanel.add("group");
@@ -1006,7 +1007,7 @@ function showHelpWindow() {
     descText = descPanel.add("statictext", undefined, "• 支持多 API Key 轮换，自动追踪剩余次数", undefined);
     descText = descPanel.add("statictext", undefined, "• 支持路径配置，使用 ${projectPath} 变量", undefined);
     descText = descPanel.add("statictext", undefined, "• 点击\"开始压缩\"：询问替换原图或添加后缀保存", undefined);
-    descText = descPanel.add("statictext", undefined, "• Ctrl+Shift + 点击：压缩选中的图片文件（仅AE）", undefined);
+    descText = descPanel.add("statictext", undefined, "• Ctrl+Shift + 点击：AE-压缩选中素材 / PS-导出选中图层并压缩", undefined);
     descText = descPanel.add("statictext", undefined, "• 选择文件/文件夹：快速选择目标进行压缩", undefined);
 
     // 使用说明
@@ -1425,6 +1426,191 @@ function compressSelectedFiles(files, replaceOriginal) {
     };
 }
 
+// ======================== PS 图层导出压缩 ========================
+
+// PS: 导出选中图层为 PNG 到文档旁边 images 目录，然后压缩替换
+function exportAndCompressPSSelectedLayers() {
+    // 检查文档是否打开且已保存
+    try {
+        if (app.documents.length === 0) {
+            alert("请先打开一个文档！");
+            return;
+        }
+        var docPath = app.activeDocument.path;
+    } catch (e) {
+        alert("请先保存文档！\n\n需要保存后才能确定导出目录。");
+        addLog("错误：文档未保存");
+        return;
+    }
+
+    var origDoc = app.activeDocument;
+    var imagesFolder = new Folder(docPath.fsName + "/images");
+    if (!imagesFolder.exists) {
+        imagesFolder.create();
+    }
+
+    // 获取选中图层 ID（ActionManager 方式，支持多选）
+    var selectedLayerIDs = [];
+    try {
+        var ref = new ActionReference();
+        ref.putProperty(charIDToTypeID("Prpr"), stringIDToTypeID("targetLayers"));
+        ref.putEnumerated(charIDToTypeID("Dcmn"), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+        var desc = executeActionGet(ref);
+        if (desc.hasKey(stringIDToTypeID("targetLayers"))) {
+            var list = desc.getList(stringIDToTypeID("targetLayers"));
+            for (var i = 0; i < list.count; i++) {
+                selectedLayerIDs.push(list.getReference(i).getIdentifier(charIDToTypeID("Lyr ")));
+            }
+        }
+    } catch (e) {}
+
+    if (selectedLayerIDs.length === 0 && origDoc.activeLayer) {
+        selectedLayerIDs.push(origDoc.activeLayer.id);
+    }
+
+    if (selectedLayerIDs.length === 0) {
+        alert("请先选中要导出的图层或组！");
+        addLog("错误：未选中任何图层");
+        return;
+    }
+
+    // 建立 ID → 图层对象映射
+    var layerMap = {};
+    function collectLayers(container) {
+        for (var i = 0; i < container.layers.length; i++) {
+            var lyr = container.layers[i];
+            layerMap[lyr.id] = lyr;
+            if (lyr.typename === "LayerSet") collectLayers(lyr);
+        }
+    }
+    collectLayers(origDoc);
+
+    addLog("PS 导出选中图层：共 " + selectedLayerIDs.length + " 个");
+    addLog("导出目录：" + imagesFolder.fsName);
+
+    // 逐个导出为 PNG
+    var exportedFiles = [];
+    for (var j = 0; j < selectedLayerIDs.length; j++) {
+        var lyrID = selectedLayerIDs[j];
+        var obj = layerMap[lyrID];
+        if (!obj) continue;
+
+        var objName = obj.name;
+        var cleanName = objName.replace(/[\/\\:*?"<>|]/g, "_");
+        var pngFile = new File(imagesFolder.fsName + "/" + cleanName + ".png");
+
+        addLog("[" + (j + 1) + "/" + selectedLayerIDs.length + "] 导出图层: " + objName);
+
+        // 选中并复制
+        origDoc.activeLayer = obj;
+        try {
+            executeAction(charIDToTypeID("copy"), new ActionDescriptor(), DialogModes.NO);
+        } catch (e) {
+            addLog("  复制失败，跳过");
+            continue;
+        }
+
+        // 获取边界尺寸，创建新文档
+        var bounds = obj.bounds;
+        var width = bounds[2] - bounds[0];
+        var height = bounds[3] - bounds[1];
+
+        var newDocMode = NewDocumentMode.RGB;
+        if (origDoc.mode === DocumentMode.CMYK) newDocMode = NewDocumentMode.CMYK;
+        else if (origDoc.mode === DocumentMode.GRAYSCALE) newDocMode = NewDocumentMode.GRAYSCALE;
+        else if (origDoc.mode === DocumentMode.LAB) newDocMode = NewDocumentMode.LAB;
+
+        var newDoc = app.documents.add(width, height, origDoc.resolution, cleanName, newDocMode, DocumentFill.TRANSPARENT);
+
+        // 粘贴
+        try {
+            executeAction(charIDToTypeID("past"), new ActionDescriptor(), DialogModes.NO);
+        } catch (e) {
+            addLog("  粘贴失败，跳过");
+            newDoc.close(SaveOptions.DONOTSAVECHANGES);
+            continue;
+        }
+
+        // 导出为 PNG
+        var pngOptions = new PNGSaveOptions();
+        pngOptions.compression = 6;
+        pngOptions.interlaced = false;
+        try {
+            newDoc.saveAs(pngFile, pngOptions, true, Extension.LOWERCASE);
+            exportedFiles.push(pngFile);
+            addLog("  已导出: " + pngFile.name + " (" + formatFileSize(pngFile.length) + ")");
+        } catch (e) {
+            addLog("  保存 PNG 失败: " + e.toString());
+        }
+
+        newDoc.close(SaveOptions.DONOTSAVECHANGES);
+    }
+
+    if (exportedFiles.length === 0) {
+        alert("导出失败，未生成任何 PNG 文件！");
+        addLog("错误：导出失败");
+        return;
+    }
+
+    addLog("导出完成，共 " + exportedFiles.length + " 个 PNG，开始压缩...");
+
+    // 压缩导出的 PNG
+    var successCount = 0;
+    var failCount = 0;
+    var totalSize = 0;
+    var originalTotalSize = 0;
+
+    progressBar.value = 0;
+
+    for (var k = 0; k < exportedFiles.length; k++) {
+        var inputFile = exportedFiles[k];
+        var originalSize = inputFile.length;
+        var tempOutput = new File(Folder.temp.fsName + "/tinify_ps_" + (new Date().getTime()) + ".png");
+
+        var result = compressImage(getCurrentApiKey(), inputFile, tempOutput, getCurrentApiKeyIndex());
+
+        if (result.success) {
+            // 用压缩后的文件替换原导出文件
+            try {
+                inputFile.remove();
+                tempOutput.copy(inputFile);
+                successCount++;
+                totalSize += result.size;
+                originalTotalSize += result.originalSize;
+                getNextApiKey();
+            } catch (e) {
+                addLog("  替换文件失败: " + inputFile.fsName);
+                failCount++;
+            }
+        } else {
+            failCount++;
+        }
+
+        if (tempOutput.exists) tempOutput.remove();
+
+        progressBar.value = Math.round(((k + 1) / exportedFiles.length) * 100);
+        win.update();
+    }
+
+    addLog("\n========== 压缩完成 ==========");
+    addLog("成功: " + successCount + " 个文件");
+    addLog("失败: " + failCount + " 个文件");
+    addLog("压缩前总大小: " + formatFileSize(originalTotalSize));
+    addLog("压缩后总大小: " + formatFileSize(totalSize));
+    updateStatusText();
+    progressBar.value = 100;
+
+    var savedSize = originalTotalSize - totalSize;
+    var savingsPercent = originalTotalSize > 0 ? ((savedSize / originalTotalSize) * 100).toFixed(2) : 0;
+    alert("导出并压缩完成！\n\n" +
+        "导出目录: " + imagesFolder.fsName + "\n" +
+        "成功: " + successCount + " 个文件\n" +
+        "失败: " + failCount + " 个文件\n\n" +
+        "压缩前: " + formatFileSize(originalTotalSize) + "\n" +
+        "压缩后: " + formatFileSize(totalSize) + "\n" +
+        "节省了: " + formatFileSize(savedSize) + " (" + savingsPercent + "%)");
+}
+
 // ======================== 按钮点击事件 ========================
 
 // 开始压缩
@@ -1444,11 +1630,11 @@ uploadButton.onClick = function() {
     var ctrlPressed = ScriptUI.environment.keyboardState.ctrlKey || ScriptUI.environment.keyboardState.metaKey;
     var shiftPressed = ScriptUI.environment.keyboardState.shiftKey;
 
-    // Ctrl+Shift 点击：压缩选中的图片文件（仅支持 After Effects）
+    // Ctrl+Shift 点击：AE 压缩选中素材 / PS 导出选中图层并压缩
     if (ctrlPressed && shiftPressed) {
         if (isPhotoshop) {
-            alert("Photoshop 不支持此功能！\n\nCtrl+Shift 压缩选中图片仅支持 After Effects。\n请使用\"选择文件\"或\"选择文件夹\"功能。");
-            addLog("Photoshop 不支持 Ctrl+Shift 压缩选中文件功能");
+            // PS: 导出选中图层为 PNG 到文档旁边 images 目录，然后压缩替换
+            exportAndCompressPSSelectedLayers();
             return;
         }
 
