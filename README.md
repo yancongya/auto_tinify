@@ -59,11 +59,10 @@ Auto_Tinify 是一款支持 After Effects 和 Photoshop 的图片压缩工具，
 
 **方法 3：使用 kbar 脚本管理器（强烈推荐）**
 
-1. 安装 [kbar]([KBar 3 中文文档](https://kbar.itycon.cn/)) 脚本管理器
-2. 在 kbar 中搜索 `Auto_Tinify`
-3. 点击安装即可
+1. 安装 [kkbar]([KkBar](https://kkbar.itycon.cn/)) 脚本管理器
+2. 安装后进行调用即可
 
-> 💡 **推荐使用方法 3**，kbar 会自动处理安装路径和版本更新，省时省力。
+> 💡 **推荐使用方法 3**，kbar 会自动处理安装路径，省时省力。
 
 ### 2. 获取 API Key
 
