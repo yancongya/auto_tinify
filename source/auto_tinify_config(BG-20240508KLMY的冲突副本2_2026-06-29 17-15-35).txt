@@ -1,0 +1,4 @@
+key:kyqPBf1yRJnWzlSf9KKHt32pl9x5Knpn,498
+key:nPXrq3bzmFfsPscYLrV78kRmgmBWzcB1,491
+默认-输出文件夹|${projectPath}/输出
+项目旁全部|${projectPath}/../
