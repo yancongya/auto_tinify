@@ -40,7 +40,7 @@ var MAIN_PANEL_TITLE = "Auto_Tinify"; // 主面板标题
 var LINK_BUTTON_1_TEXT = "项目地址";
 var LINK_BUTTON_1_URL = "https://github.com/yancongya/auto_tinify";
 var LINK_BUTTON_2_TEXT = "发布页";
-var LINK_BUTTON_2_URL = "https://tinify.com/developers";
+var LINK_BUTTON_2_URL = "https://yancongya.github.io/auto_tinify/";
 var LINK_BUTTON_3_TEXT = "网页版压缩";
 var LINK_BUTTON_3_URL = "https://tinify.cn/";
 
