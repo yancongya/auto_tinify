@@ -1,6 +1,6 @@
 ﻿# <img src="assets/logo.png" width="32"> Auto_Tinify
 
-![Version](https://img.shields.io/badge/version-2.0.6-blue)
+![Version](https://img.shields.io/badge/version-2.0.7-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![After Effects](https://img.shields.io/badge/After%20Effects-2020%2B-orange)
 ![Photoshop](https://img.shields.io/badge/Photoshop-2020%2B-orange)

@@ -1,5 +1,5 @@
 ﻿// 设置版本的变量
-var version = "2.0.6";
+var version = "2.0.7";
 
 // ======================== 环境检测 ========================
 var isPhotoshop = (app.name === "Adobe Photoshop");
