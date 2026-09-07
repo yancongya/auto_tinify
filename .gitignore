@@ -1,20 +1,12 @@
-# 忽略根目录的JSX源文件（仅在私有分支保留）
-*.jsx
-logo/
-source/
+# 参考脚本（第三方扩展，不纳入版本管理）
+source/reference/
 
-# 公开分支：保留public文件夹、更新日志、README
-!public/
-!更新日志.md
-!README.md
+# 配置文件
+source/auto_tinify_config.txt
 
-# private配置文件不提交
-auto_tiny_config.txt
-auto_tiny_output/
+# IDE
+.vscode/
 
-# Windows系统文件
+# 系统文件
 Thumbs.db
-Desktop.ini
-
-# PowerShell脚本
-*.ps1
+.DS_Store
